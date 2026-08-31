@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="images/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="images/favicon-32.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="images/favicon-180.png">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports – Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+    <style>
+      .rep-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem}
+      .bar-row{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;font-size:0.85rem}
+      .bar-label{width:100px;color:var(--text-muted);flex-shrink:0}
+      .bar-track{flex:1;height:10px;background:var(--bg-elevated);border-radius:99px;overflow:hidden}
+      .bar-fill{height:100%;background:linear-gradient(90deg,var(--primary),#00ff88);border-radius:99px}
+      .panel{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.15rem;margin-bottom:1rem}
+    </style>
+</head>
+<body class="admin-body">
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="logo"><span class="logo-icon">PT</span><span>Admin</span></div>
+        <nav class="admin-nav">
+            <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+            <a href="products.html"><span class="nav-icon">📦</span> Products</a>
+            <a href="add-product.html"><span class="nav-icon">➕</span> Add Product</a>
+            <a href="orders.html"><span class="nav-icon">🛒</span> Orders</a>
+            <a href="inventory.html"><span class="nav-icon">📋</span> Inventory</a>
+            <a href="customers.html"><span class="nav-icon">👥</span> Customers</a>
+            <a href="categories.html"><span class="nav-icon">🏷️</span> Categories</a>
+            <a href="coupons.html"><span class="nav-icon">🎟</span> Coupons</a>
+            <a href="reports.html" class="active"><span class="nav-icon">📈</span> Reports</a>
+            <a href="finance.html"><span class="nav-icon">💳</span> Finance</a>
+            <a href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
+            <a href="#" onclick="Auth.adminLogout();location.href='login.html'"><span class="nav-icon">🚪</span> Logout</a>
+        </nav>
+    </aside>
+    <div class="admin-main">
+        <div class="admin-topbar">
+            <button class="admin-sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+            <h2 style="font-size:1.1rem">Reports</h2>
+            <button class="btn btn-outline btn-sm" onclick="exportCSV()">Export Orders CSV</button>
+        </div>
+        <div class="admin-content" id="content">
+            <div class="loader-wrap"><div class="spinner"></div></div>
+        </div>
+    </div>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/admin-common.js"></script>
+    <script>
+        if (!Auth.isAdminLoggedIn()) location.href = "login.html";
+        let report = null, orders = [];
+
+        async function load() {
+            const [r, o] = await Promise.all([API.adminGetReports(), API.adminGetOrders()]);
+            report = r.success ? r.data : {};
+            orders = o.success ? (o.data||[]) : [];
+            const maxDay = Math.max(1, ...Object.values(report.by_day||{x:1}));
+            const days = Object.entries(report.by_day||{}).sort((a,b)=>a[0]<b[0]?1:-1).slice(0,14);
+            const statuses = Object.entries(report.by_status||{});
+
+            document.getElementById("content").innerHTML = `
+            <div class="rep-grid">
+                <div class="stat-card primary"><div class="stat-label">Total Sales</div><div class="stat-value" style="font-size:1.3rem">${Utils.formatPrice(report.total_sales||0)}</div></div>
+                <div class="stat-card"><div class="stat-label">Orders</div><div class="stat-value">${report.total_orders||0}</div></div>
+                <div class="stat-card success"><div class="stat-label">Avg Order</div><div class="stat-value" style="font-size:1.2rem">${Utils.formatPrice(report.avg_order||0)}</div></div>
+                <div class="stat-card warning"><div class="stat-label">Low Stock</div><div class="stat-value">${(report.low_stock||[]).length}</div></div>
+                <div class="stat-card danger"><div class="stat-label">Out of Stock</div><div class="stat-value">${(report.out_of_stock||[]).length}</div></div>
+            </div>
+            <div class="panel">
+                <h3 style="margin:0 0 1rem;font-size:0.95rem">Sales by Day</h3>
+                ${days.length ? days.map(([d,v]) => `
+                    <div class="bar-row"><span class="bar-label">${d}</span>
+                    <div class="bar-track"><div class="bar-fill" style="width:${Math.round(v/maxDay*100)}%"></div></div>
+                    <span>${Utils.formatPrice(v)}</span></div>
+                `).join("") : "<p style='color:var(--text-muted)'>No sales data yet</p>"}
+            </div>
+            <div class="panel">
+                <h3 style="margin:0 0 1rem;font-size:0.95rem">Orders by Status</h3>
+                ${statuses.map(([s,n]) => `<div class="bar-row"><span class="bar-label">${s}</span><strong>${n}</strong></div>`).join("") || "—"}
+            </div>
+            <div class="panel">
+                <h3 style="margin:0 0 1rem;font-size:0.95rem">Low Stock Alert</h3>
+                ${(report.low_stock||[]).length ? `
+                <table class="admin-table"><thead><tr><th>Product</th><th>Stock</th></tr></thead>
+                <tbody>${report.low_stock.map(p=>`<tr><td>${p.name}</td><td class="status-badge status-low-stock">${p.stock}</td></tr>`).join("")}</tbody></table>
+                ` : "<p style='color:var(--text-muted)'>All good — no low stock</p>"}
+            </div>`;
+        }
+
+        function exportCSV() {
+            const headers = ["order_id","name","phone","email","address","total","payment_method","payment_status","order_status","tracking_number","created_at"];
+            const rows = orders.map(o => headers.map(h => `"${String(o[h]??"").replace(/"/g,'""')}"`).join(","));
+            const csv = [headers.join(","), ...rows].join("\n");
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(new Blob([csv], {type:"text/csv"}));
+            a.download = "orders-export.csv";
+            a.click();
+            Utils.toast("CSV downloaded","success");
+        }
+
+        load();
+    </script>
+</body>
+</html>

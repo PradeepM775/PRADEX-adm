@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="images/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="images/favicon-32.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="images/favicon-180.png">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory – Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="logo"><span class="logo-icon">PT</span><span>Admin</span></div>
+        <nav class="admin-nav">
+            <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+            <a href="products.html"><span class="nav-icon">📦</span> Products</a>
+            <a href="add-product.html"><span class="nav-icon">➕</span> Add Product</a>
+            <a href="orders.html"><span class="nav-icon">🛒</span> Orders</a>
+            <a href="inventory.html" class="active"><span class="nav-icon">📋</span> Inventory</a>
+            <a href="customers.html"><span class="nav-icon">👥</span> Customers</a>
+            <a href="categories.html"><span class="nav-icon">🏷️</span> Categories</a>
+            <a href="coupons.html"><span class="nav-icon">🎟</span> Coupons</a>
+            <a href="reports.html"><span class="nav-icon">📈</span> Reports</a>
+            <a href="finance.html"><span class="nav-icon">💳</span> Finance</a>
+            <a href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
+            <a href="#" onclick="Auth.adminLogout();location.href='login.html'"><span class="nav-icon">🚪</span> Logout</a>
+        </nav>
+    </aside>
+    <div class="admin-main">
+        <div class="admin-topbar">
+            <button class="admin-sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+            <h2 style="font-size:1.1rem">Inventory</h2>
+        </div>
+        <div class="admin-content">
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead><tr><th>Product</th><th>Current Qty</th><th>Min Stock</th><th>Status</th><th>Update</th></tr></thead>
+                    <tbody id="tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/admin-common.js"></script>
+    <script>
+        if (!Auth.isAdminLoggedIn()) location.href = "login.html";
+
+        async function load() {
+            const res = await API.adminGetProducts();
+            const list = res.success ? res.data : [];
+            document.getElementById("tbody").innerHTML = list.map(p => {
+                const st = p.stock <= 0 ? "out-of-stock" : (p.stock <= (p.minimum_stock||5) ? "low-stock" : "in-stock");
+                const label = p.stock <= 0 ? "Out of Stock" : (p.stock <= (p.minimum_stock||5) ? "Low Stock" : "In Stock");
+                return `<tr>
+                    <td>${p.name}</td>
+                    <td>${p.stock}</td>
+                    <td>${p.minimum_stock || 5}</td>
+                    <td><span class="status-badge status-${st}">${label}</span></td>
+                    <td>
+                        <input type="number" id="qty-${p.product_id}" value="${p.stock}" min="0" style="width:70px;padding:0.3rem;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text)">
+                        <button class="btn btn-sm btn-primary" onclick="updateStock('${p.product_id}')">Save</button>
+                    </td>
+                </tr>`;
+            }).join("");
+        }
+
+        async function updateStock(id) {
+            const qty = Number(document.getElementById("qty-" + id).value);
+            const res = await API.adminUpdateStock(id, qty);
+            Utils.toast(res.success ? "Stock updated (demo)" : res.message, res.success ? "success" : "error");
+        }
+
+        load();
+    </script>
+</body>
+</html>

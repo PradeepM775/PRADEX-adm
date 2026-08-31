@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="images/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="images/favicon-32.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="images/favicon-180.png">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coupons – Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="logo"><span class="logo-icon">PT</span><span>Admin</span></div>
+        <nav class="admin-nav">
+            <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+            <a href="products.html"><span class="nav-icon">📦</span> Products</a>
+            <a href="add-product.html"><span class="nav-icon">➕</span> Add Product</a>
+            <a href="orders.html"><span class="nav-icon">🛒</span> Orders</a>
+            <a href="inventory.html"><span class="nav-icon">📋</span> Inventory</a>
+            <a href="customers.html"><span class="nav-icon">👥</span> Customers</a>
+            <a href="categories.html"><span class="nav-icon">🏷️</span> Categories</a>
+            <a href="coupons.html" class="active"><span class="nav-icon">🎟</span> Coupons</a>
+            <a href="reports.html"><span class="nav-icon">📈</span> Reports</a>
+            <a href="finance.html"><span class="nav-icon">💳</span> Finance</a>
+            <a href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
+            <a href="#" onclick="Auth.adminLogout();location.href='login.html'"><span class="nav-icon">🚪</span> Logout</a>
+        </nav>
+    </aside>
+    <div class="admin-main">
+        <div class="admin-topbar">
+            <button class="admin-sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+            <h2 style="font-size:1.1rem">Coupons</h2>
+            <button class="btn btn-primary btn-sm" onclick="document.getElementById('formBox').style.display='block'">+ Add Coupon</button>
+        </div>
+        <div class="admin-content">
+            <div id="formBox" class="admin-form" style="display:none;max-width:520px;margin-bottom:1.5rem">
+                <form id="cForm">
+                    <div class="form-row">
+                        <div class="form-group"><label>Code *</label><input name="code" class="form-control" required placeholder="SAVE10" style="text-transform:uppercase"></div>
+                        <div class="form-group"><label>Type</label>
+                            <select name="type" class="form-control"><option value="percent">Percent %</option><option value="fixed">Fixed ₹</option></select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Value *</label><input name="value" type="number" class="form-control" required min="1"></div>
+                        <div class="form-group"><label>Min Order ₹</label><input name="min_order" type="number" class="form-control" value="0"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Max Uses (0=unlimited)</label><input name="max_uses" type="number" class="form-control" value="0"></div>
+                        <div class="form-group"><label>Expires</label><input name="expires" type="date" class="form-control"></div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('formBox').style.display='none'">Cancel</button>
+                </form>
+            </div>
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead><tr><th>Code</th><th>Type</th><th>Value</th><th>Min Order</th><th>Uses</th><th>Expires</th><th>Status</th><th></th></tr></thead>
+                    <tbody id="tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/admin-common.js"></script>
+    <script>
+        if (!Auth.isAdminLoggedIn()) location.href = "login.html";
+        async function load() {
+            const res = await API.adminGetCoupons();
+            const list = res.success ? (res.data||[]) : [];
+            document.getElementById("tbody").innerHTML = list.length ? list.map(c => `
+                <tr>
+                    <td><strong>${c.code}</strong></td>
+                    <td>${c.type}</td>
+                    <td>${c.type==="percent"?c.value+"%":"₹"+c.value}</td>
+                    <td>${c.min_order||0}</td>
+                    <td>${c.used||0}${c.max_uses?" / "+c.max_uses:""}</td>
+                    <td>${c.expires||"—"}</td>
+                    <td><span class="status-badge status-${c.status==="active"?"active":"cancelled"}">${c.status}</span></td>
+                    <td><button class="btn btn-sm btn-danger" onclick="del('${c.code}')">Delete</button></td>
+                </tr>
+            `).join("") : `<tr><td colspan="8" style="text-align:center">No coupons</td></tr>`;
+        }
+        async function del(code) {
+            if (!confirm("Delete "+code+"?")) return;
+            await API.adminDeleteCoupon(code);
+            Utils.toast("Deleted","success");
+            load();
+        }
+        document.getElementById("cForm").addEventListener("submit", async e => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const res = await API.adminAddCoupon({
+                code: fd.get("code"),
+                type: fd.get("type"),
+                value: fd.get("value"),
+                min_order: fd.get("min_order"),
+                max_uses: fd.get("max_uses"),
+                expires: fd.get("expires"),
+                status: "active"
+            });
+            Utils.toast(res.success?"Coupon added":res.message, res.success?"success":"error");
+            if (res.success) { e.target.reset(); document.getElementById("formBox").style.display="none"; load(); }
+        });
+        load();
+    </script>
+</body>
+</html>

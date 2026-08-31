@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="images/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="images/favicon-32.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="images/favicon-180.png">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings – Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="logo"><span class="logo-icon">PT</span><span>Admin</span></div>
+        <nav class="admin-nav">
+            <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+            <a href="products.html"><span class="nav-icon">📦</span> Products</a>
+            <a href="add-product.html"><span class="nav-icon">➕</span> Add Product</a>
+            <a href="orders.html"><span class="nav-icon">🛒</span> Orders</a>
+            <a href="inventory.html"><span class="nav-icon">📋</span> Inventory</a>
+            <a href="customers.html"><span class="nav-icon">👥</span> Customers</a>
+            <a href="categories.html"><span class="nav-icon">🏷️</span> Categories</a>
+            <a href="coupons.html"><span class="nav-icon">🎟</span> Coupons</a>
+            <a href="reports.html"><span class="nav-icon">📈</span> Reports</a>
+            <a href="finance.html"><span class="nav-icon">💳</span> Finance</a>
+            <a href="settings.html" class="active"><span class="nav-icon">⚙️</span> Settings</a>
+            <a href="#" onclick="Auth.adminLogout();location.href='login.html'"><span class="nav-icon">🚪</span> Logout</a>
+        </nav>
+    </aside>
+    <div class="admin-main">
+        <div class="admin-topbar">
+            <button class="admin-sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+            <h2 style="font-size:1.1rem">Settings</h2>
+        </div>
+        <div class="admin-content">
+            <form class="admin-form" id="settingsForm" style="max-width:640px">
+                <h3 style="margin-bottom:1.25rem">Store Settings</h3>
+                <div class="form-group"><label>Store Name</label><input name="store_name" class="form-control"></div>
+                <div class="form-group"><label>Contact Email</label><input name="email" type="email" class="form-control"></div>
+                <div class="form-group"><label>Phone</label><input name="phone" class="form-control"></div>
+                <div class="form-group"><label>Store Address</label><textarea name="address" class="form-control" rows="2"></textarea></div>
+
+                <hr style="border-color:var(--border);margin:1.5rem 0">
+                <h3 style="margin-bottom:0.5rem;font-size:1rem">Courier Label – FROM</h3>
+                <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem">Print label-ல From address</p>
+                <div class="form-group"><label>From Name</label><input name="ship_from_name" class="form-control"></div>
+                <div class="form-group"><label>From Phone</label><input name="ship_from_phone" class="form-control"></div>
+                <div class="form-group"><label>From Address</label><textarea name="ship_from_address" class="form-control" rows="3"></textarea></div>
+
+                <hr style="border-color:var(--border);margin:1.5rem 0">
+                <h3 style="margin-bottom:0.5rem;font-size:1rem">OTP & WhatsApp</h3>
+                <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem">
+                    OTP email எந்த address-ல இருந்து போகும், WhatsApp எந்த number-ல இருந்து / எந்த number-க்கு notify ஆகும் என்பதை இங்க set பண்ணுங்க.
+                    (Actual send Apps Script / Gmail + WhatsApp Business API connect பண்ணும்போது இந்த values use ஆகும்.)
+                </p>
+                <div class="form-group">
+                    <label>OTP From Email</label>
+                    <input name="otp_from_email" type="email" class="form-control" placeholder="noreply@yourdomain.com">
+                    <p style="font-size:0.8rem;color:var(--text-dim);margin-top:0.35rem">Login OTP இந்த email-ல இருந்து customer-க்கு போகும் (Gmail = Apps Script owner account).</p>
+                </div>
+                <div class="form-group">
+                    <label>Admin WhatsApp Number</label>
+                    <input name="whatsapp_admin_number" class="form-control" placeholder="919999999999 (country code, no +)">
+                    <p style="font-size:0.8rem;color:var(--text-dim);margin-top:0.35rem">New order notify + customer WhatsApp button இந்த number use பண்ணும்.</p>
+                </div>
+                <div class="form-group">
+                    <label style="display:flex;align-items:center;gap:0.5rem">
+                        <input type="checkbox" name="whatsapp_notify_customer" id="waNotify"> Order status-க்கு customer WhatsApp link enable
+                    </label>
+                </div>
+
+                <hr style="border-color:var(--border);margin:1.5rem 0">
+                <div class="form-row">
+                    <div class="form-group"><label>Shipping Fee (₹)</label><input name="shipping_fee" type="number" class="form-control"></div>
+                    <div class="form-group"><label>Free Shipping Min (₹)</label><input name="free_shipping_min" type="number" class="form-control"></div>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Settings</button>
+            </form>
+        </div>
+    </div>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/admin-common.js"></script>
+    <script>
+        if (!Auth.isAdminLoggedIn()) location.href = "login.html";
+        const s = API.getStoreSettings();
+        const form = document.getElementById("settingsForm");
+        ["store_name","email","phone","address","ship_from_name","ship_from_phone","ship_from_address",
+         "otp_from_email","whatsapp_admin_number","shipping_fee","free_shipping_min"].forEach(k => {
+            if (form[k] && s[k] != null) form[k].value = s[k];
+        });
+        document.getElementById("waNotify").checked = s.whatsapp_notify_customer !== false;
+
+        form.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const cur = API.getStoreSettings();
+            const fd = new FormData(form);
+            fd.forEach((v, k) => { cur[k] = v; });
+            cur.shipping_fee = Number(cur.shipping_fee) || 49;
+            cur.free_shipping_min = Number(cur.free_shipping_min) || 999;
+            cur.whatsapp_notify_customer = document.getElementById("waNotify").checked;
+            cur.whatsapp = cur.whatsapp_admin_number || cur.whatsapp;
+            API.saveStoreSettings(cur);
+            Utils.toast("Settings saved", "success");
+        });
+    </script>
+</body>
+</html>

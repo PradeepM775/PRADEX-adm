@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="images/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="images/favicon-32.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="images/favicon-180.png">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders – Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+    <style>
+      .order-addr{font-size:0.8rem;color:var(--text-muted);max-width:160px;white-space:normal}
+      .bulk-bar{display:none;gap:0.5rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap}
+      .bulk-bar.show{display:flex}
+    </style>
+</head>
+<body class="admin-body">
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="logo"><span class="logo-icon">PT</span><span>Admin</span></div>
+        <nav class="admin-nav">
+            <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+            <a href="products.html"><span class="nav-icon">📦</span> Products</a>
+            <a href="add-product.html"><span class="nav-icon">➕</span> Add Product</a>
+            <a href="orders.html" class="active"><span class="nav-icon">🛒</span> Orders</a>
+            <a href="inventory.html"><span class="nav-icon">📋</span> Inventory</a>
+            <a href="customers.html"><span class="nav-icon">👥</span> Customers</a>
+            <a href="categories.html"><span class="nav-icon">🏷️</span> Categories</a>
+            <a href="coupons.html"><span class="nav-icon">🎟</span> Coupons</a>
+            <a href="reports.html"><span class="nav-icon">📈</span> Reports</a>
+            <a href="finance.html"><span class="nav-icon">💳</span> Finance</a>
+            <a href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
+            <a href="#" onclick="Auth.adminLogout();location.href='login.html'"><span class="nav-icon">🚪</span> Logout</a>
+        </nav>
+    </aside>
+    <div class="admin-main">
+        <div class="admin-topbar">
+            <button class="admin-sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+            <h2 style="font-size:1.1rem">Orders</h2>
+            <button class="btn btn-outline btn-sm" onclick="exportCSV()">Export CSV</button>
+        </div>
+        <div class="admin-content">
+            <div class="bulk-bar" id="bulkBar">
+                <span id="selCount">0 selected</span>
+                <select id="bulkStatus" class="form-control" style="max-width:160px;padding:0.35rem">
+                    <option value="">Set status…</option>
+                    <option>Confirmed</option><option>Processing</option><option>Packed</option>
+                    <option>Shipped</option><option>Out for Delivery</option><option>Delivered</option><option>Cancelled</option>
+                </select>
+                <button class="btn btn-primary btn-sm" onclick="applyBulk()">Apply</button>
+            </div>
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="checkAll" onchange="toggleAll(this.checked)"></th>
+                            <th>Order ID</th><th>Customer</th><th>Phone</th><th>Address</th>
+                            <th>Amount</th><th>Payment</th><th>Status</th><th>Tracking</th><th>Date</th><th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/admin-common.js"></script>
+    <script>
+        if (!Auth.isAdminLoggedIn()) location.href = "login.html";
+        const STATUSES = ["Confirmed","Processing","Packed","Shipped","Out for Delivery","Delivered","Cancelled"];
+        const PAY_STATUSES = ["Pending","Paid","Failed","Refunded"];
+        let allOrders = [];
+
+        async function load() {
+            const res = await API.adminGetOrders();
+            allOrders = res.success ? (res.data || []).slice().reverse() : [];
+            render();
+        }
+
+        function render() {
+            document.getElementById("tbody").innerHTML = allOrders.length ? allOrders.map(o => `
+                <tr>
+                    <td><input type="checkbox" class="row-check" value="${o.order_id}" onchange="updateBulk()"></td>
+                    <td><a href="order-detail.html?id=${encodeURIComponent(o.order_id)}" style="color:var(--primary);font-weight:600">${o.order_id}</a></td>
+                    <td>${o.name || "—"}</td>
+                    <td>${o.phone || "—"}</td>
+                    <td class="order-addr">${o.address || "—"}</td>
+                    <td>${Utils.formatPrice(o.total)}</td>
+                    <td>
+                        <div style="font-size:0.75rem">${o.payment_method || "—"}</div>
+                        <select onchange="updatePayment('${o.order_id}', this.value)" class="form-control" style="padding:0.2rem;font-size:0.75rem;min-width:90px">
+                            ${PAY_STATUSES.map(s => `<option value="${s}" ${(o.payment_status||"")==s?"selected":""}>${s}</option>`).join("")}
+                        </select>
+                    </td>
+                    <td>
+                        <select onchange="updateStatus('${o.order_id}', this.value)" class="form-control" style="padding:0.2rem;font-size:0.75rem">
+                            ${STATUSES.map(s => `<option value="${s}" ${o.order_status===s?"selected":""}>${s}</option>`).join("")}
+                        </select>
+                    </td>
+                    <td style="font-size:0.8rem">${o.tracking_number || "—"}</td>
+                    <td>${o.created_at ? new Date(o.created_at).toLocaleDateString() : "—"}</td>
+                    <td style="display:flex;gap:0.3rem;flex-wrap:wrap">
+                        <a href="order-detail.html?id=${encodeURIComponent(o.order_id)}" class="btn btn-sm btn-outline">View</a>
+                        <button type="button" class="btn btn-sm btn-outline" onclick="deleteOne('${o.order_id}')" title="Delete">🗑</button>
+                    </td>
+                </tr>
+            `).join("") : `<tr><td colspan="11" style="text-align:center">No orders yet</td></tr>`;
+            updateBulk();
+        }
+
+        function toggleAll(on) {
+            document.querySelectorAll(".row-check").forEach(c => c.checked = on);
+            updateBulk();
+        }
+        function updateBulk() {
+            const n = document.querySelectorAll(".row-check:checked").length;
+            document.getElementById("selCount").textContent = n + " selected";
+            document.getElementById("bulkBar").classList.toggle("show", n > 0);
+        }
+        async function applyBulk() {
+            const st = document.getElementById("bulkStatus").value;
+            if (!st) { Utils.toast("Choose status", "error"); return; }
+            const ids = [...document.querySelectorAll(".row-check:checked")].map(c => c.value);
+            for (const id of ids) {
+                await API.adminUpdateOrderStatus(id, st);
+                const o = allOrders.find(x => x.order_id === id);
+                if (o) o.order_status = st;
+            }
+            Utils.toast(ids.length + " orders updated", "success");
+            render();
+        }
+
+        async function updateStatus(orderId, status) {
+            const res = await API.adminUpdateOrderStatus(orderId, status);
+            Utils.toast(res.success ? "Status updated" : res.message, res.success ? "success" : "error");
+            if (res.success) { const o = allOrders.find(x=>x.order_id===orderId); if(o) o.order_status=status; }
+        }
+        async function updatePayment(orderId, status) {
+            const res = await API.adminUpdatePaymentStatus(orderId, status);
+            Utils.toast(res.success ? "Payment updated" : res.message, res.success ? "success" : "error");
+            if (res.success) { const o = allOrders.find(x=>x.order_id===orderId); if(o) o.payment_status=status; }
+        }
+
+        function exportCSV() {
+            const headers = ["order_id","name","phone","email","address","total","payment_method","payment_status","order_status","tracking_number","created_at","payment_proof_url"];
+            const rows = allOrders.map(o => headers.map(h => `"${String(o[h]??"").replace(/"/g,'""')}"`).join(","));
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(new Blob([[headers.join(","),...rows].join("\n")],{type:"text/csv"}));
+            a.download = "orders-backup-" + new Date().toISOString().slice(0,10) + ".csv";
+            a.click();
+        }
+
+        async function deleteOne(id) {
+            if (!confirm("Delete order " + id + "?\n\nTip: Export CSV first for monthly backup.")) return;
+            const res = await API.adminDeleteOrder(id);
+            try {
+                let local = JSON.parse(localStorage.getItem("ptv_demo_orders") || "[]");
+                local = local.filter(o => o.order_id !== id);
+                localStorage.setItem("ptv_demo_orders", JSON.stringify(local));
+            } catch (e) {}
+            allOrders = allOrders.filter(o => o.order_id !== id);
+            render();
+            Utils.toast(res.success ? "Deleted" : (res.message || "Removed"), res.success ? "success" : "info");
+        }
+
+        load();
+    </script>
+</body>
+</html>

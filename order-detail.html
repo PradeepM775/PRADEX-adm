@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="images/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="images/favicon-32.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="images/favicon-180.png">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Detail – Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+    <style>
+      .od-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:1.25rem}
+      @media(max-width:900px){.od-grid{grid-template-columns:1fr}}
+      .od-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem}
+      .od-card h3{margin:0 0 1rem;font-size:0.95rem}
+      .od-row{display:flex;justify-content:space-between;gap:1rem;padding:0.4rem 0;border-bottom:1px solid var(--border);font-size:0.9rem}
+      .od-row:last-child{border:none}
+      .od-label{color:var(--text-muted)}
+      .proof-img{max-width:100%;max-height:280px;border-radius:8px;border:1px solid var(--border);margin-top:0.5rem}
+      @media print{
+        .admin-sidebar,.admin-topbar,.no-print{display:none!important}
+        .admin-main{margin:0!important;width:100%!important}
+        .od-card{break-inside:avoid;border-color:#ccc}
+        body{background:#fff;color:#000}
+      }
+      .invoice-box{display:none}
+      @media print{.invoice-box{display:block}.od-grid{display:none}}
+    </style>
+</head>
+<body class="admin-body">
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="logo"><span class="logo-icon">PT</span><span>Admin</span></div>
+        <nav class="admin-nav">
+            <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+            <a href="products.html"><span class="nav-icon">📦</span> Products</a>
+            <a href="add-product.html"><span class="nav-icon">➕</span> Add Product</a>
+            <a href="orders.html" class="active"><span class="nav-icon">🛒</span> Orders</a>
+            <a href="inventory.html"><span class="nav-icon">📋</span> Inventory</a>
+            <a href="customers.html"><span class="nav-icon">👥</span> Customers</a>
+            <a href="categories.html"><span class="nav-icon">🏷️</span> Categories</a>
+            <a href="coupons.html"><span class="nav-icon">🎟</span> Coupons</a>
+            <a href="reports.html"><span class="nav-icon">📈</span> Reports</a>
+            <a href="finance.html"><span class="nav-icon">💳</span> Finance</a>
+            <a href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
+            <a href="#" onclick="Auth.adminLogout();location.href='login.html'"><span class="nav-icon">🚪</span> Logout</a>
+        </nav>
+    </aside>
+    <div class="admin-main">
+        <div class="admin-topbar no-print">
+            <button class="admin-sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+            <h2 style="font-size:1.1rem">Order Detail</h2>
+            <a href="orders.html" class="btn btn-outline btn-sm">← Orders</a>
+        </div>
+        <div class="admin-content" id="content">
+            <div class="loader-wrap"><div class="spinner"></div><p>Loading order...</p></div>
+        </div>
+        <div class="invoice-box" id="invoiceBox"></div>
+    </div>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/admin-common.js"></script>
+    <script>
+        if (!Auth.isAdminLoggedIn()) location.href = "login.html";
+        const orderId = (new URLSearchParams(location.search).get("id") || "").trim();
+        const STATUSES = ["New","Confirmed","Processing","Packed","Shipped","Out for Delivery","Delivered","Cancelled"];
+        const PAY = ["Pending","Paid","Failed","Refunded"];
+        let order = null;
+
+        function safeAddress(a) {
+            const s = String(a || "").trim();
+            if (!s || /drive\.google|thumbnail\?id=|googleusercontent|https?:\/\//i.test(s)) return "—";
+            return s;
+        }
+        function safeDate(d) {
+            if (!d) return "—";
+            const dt = new Date(d);
+            return isNaN(dt.getTime()) ? "—" : dt.toLocaleString();
+        }
+        function esc(s) {
+            return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
+        }
+
+        
+        async function attachProof() {
+            const input = document.getElementById("adminProofFile");
+            if (!input || !input.files || !input.files[0]) {
+                Utils.toast("Choose an image", "error");
+                return;
+            }
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = async () => {
+                const dataUrl = reader.result;
+                let url = "";
+                try {
+                    Utils.toast("Uploading...", "info");
+                    const up = await API.uploadImage({
+                        filename: "payment_proof_" + orderId + "_" + Date.now() + ".jpg",
+                        mimeType: file.type || "image/jpeg",
+                        base64Data: dataUrl
+                    });
+                    if (up.success && up.data && up.data.url) url = up.data.url;
+                } catch (e) {}
+                if (!url) {
+                    // local only
+                    try {
+                        const proofs = JSON.parse(localStorage.getItem("ptv_payment_proofs") || "{}");
+                        proofs[orderId] = dataUrl;
+                        localStorage.setItem("ptv_payment_proofs", JSON.stringify(proofs));
+                    } catch (e) {}
+                    Utils.toast("Proof saved locally for this browser", "success");
+                    load();
+                    return;
+                }
+                // update order payment_proof_url via API if available
+                try {
+                    if (typeof API.updateOrderProof === "function") {
+                        await API.updateOrderProof(orderId, url);
+                    } else {
+                        await API.request("updateOrderProof", { order_id: orderId, payment_proof_url: url });
+                    }
+                } catch (e) {
+                    // still show local
+                    const proofs = JSON.parse(localStorage.getItem("ptv_payment_proofs") || "{}");
+                    proofs[orderId] = url;
+                    localStorage.setItem("ptv_payment_proofs", JSON.stringify(proofs));
+                }
+                Utils.toast("Payment proof saved", "success");
+                load();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function load() {
+            const el = document.getElementById("content");
+            if (!orderId) {
+                el.innerHTML = "<p>Missing order ID. <a href='orders.html'>Back to Orders</a></p>";
+                return;
+            }
+            try {
+                const res = await API.adminGetOrders();
+                const list = (res && res.success && Array.isArray(res.data)) ? res.data : [];
+                // also merge local demo orders if API empty
+                let local = [];
+                try { local = JSON.parse(localStorage.getItem("ptv_demo_orders") || "[]"); } catch(e) {}
+                const merged = list.length ? list : local;
+                order = merged.find(o => String(o.order_id) === String(orderId));
+                if (!order) {
+                    el.innerHTML = `<p>Order <strong>${esc(orderId)}</strong> not found.</p>
+                        <p style="color:var(--text-muted);font-size:0.9rem">API: ${esc(res && res.message ? res.message : "ok")} · Loaded ${merged.length} orders</p>
+                        <a href="orders.html" class="btn btn-outline btn-sm">← Back</a>`;
+                    return;
+                }
+                render();
+            } catch (err) {
+                el.innerHTML = `<p>Failed to load order.</p><p style="color:var(--danger)">${esc(err.message || err)}</p>
+                    <button class="btn btn-primary btn-sm" onclick="load()">Retry</button>
+                    <a href="orders.html" class="btn btn-outline btn-sm">← Back</a>`;
+            }
+        }
+
+        function render() {
+            const o = order;
+            let proof = o.payment_proof_url || o.payment_screenshot || o._local_proof || "";
+            if (!proof || proof === "pending_local_proof") {
+                try {
+                    const proofs = JSON.parse(localStorage.getItem("ptv_payment_proofs") || "{}");
+                    if (proofs[o.order_id]) proof = proofs[o.order_id];
+                } catch (e) {}
+            }
+            const proofOk = proof && proof !== "pending_local_proof";
+            const phoneDigits = String(o.phone || "").replace(/\D/g, "");
+            document.getElementById("content").innerHTML = `
+            <div class="no-print" style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem">
+                <button class="btn btn-primary btn-sm" onclick="window.print()">🖨 Print Invoice</button>
+                <button class="btn btn-outline btn-sm" onclick="printLabel()">📦 Shipping Label</button>
+                ${phoneDigits ? `<a class="btn btn-outline btn-sm" target="_blank"
+                   href="https://wa.me/${phoneDigits}?text=${encodeURIComponent("Hi " + (o.name||"") + ", your order " + o.order_id + " status: " + (o.order_status||""))}">WhatsApp</a>` : ""}
+                <button class="btn btn-sm" style="background:var(--danger);color:#fff;border:none" onclick="deleteOrder()">🗑 Delete Order</button>
+            </div>
+            <div class="od-grid">
+                <div>
+                    <div class="od-card" style="margin-bottom:1rem">
+                        <h3>Order ${esc(o.order_id)}</h3>
+                        <div class="od-row"><span class="od-label">Date</span><span>${o.created_at ? safeDate(o.created_at) : "—"}</span></div>
+                        <div class="od-row"><span class="od-label">Status</span>
+                            <select id="st" class="form-control" style="max-width:180px;padding:0.3rem;font-size:0.85rem">
+                                ${STATUSES.map(s=>`<option ${o.order_status===s?"selected":""}>${s}</option>`).join("")}
+                            </select>
+                        </div>
+                        <div class="od-row"><span class="od-label">Payment</span>
+                            <div>
+                                <div style="font-size:0.8rem;margin-bottom:4px">${esc(o.payment_method||"—")}</div>
+                                <select id="pay" class="form-control" style="max-width:140px;padding:0.3rem;font-size:0.85rem">
+                                    ${PAY.map(s=>`<option ${o.payment_status===s?"selected":""}>${s}</option>`).join("")}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="od-row"><span class="od-label">Total</span><strong>${Utils.formatPrice(o.total)}</strong></div>
+                        <button class="btn btn-primary btn-sm no-print" style="margin-top:0.75rem" onclick="saveStatus()">Save Status</button>
+                    </div>
+                    <div class="od-card">
+                        <h3>Items</h3>
+                        <div class="od-row"><span class="od-label">Products</span><span>${esc(o.product_names || o.products || "—")}</span></div>
+                        <div class="od-row"><span class="od-label">Quantity</span><span>${esc(o.quantity || "—")}</span></div>
+                        <div class="od-row"><span class="od-label">Subtotal</span><span>${Utils.formatPrice(o.subtotal || o.total)}</span></div>
+                        <div class="od-row"><span class="od-label">Shipping</span><span>${Utils.formatPrice(o.shipping || 0)}</span></div>
+                        ${o.discount ? `<div class="od-row"><span class="od-label">Discount</span><span>-${Utils.formatPrice(o.discount)}</span></div>` : ""}
+                    </div>
+                </div>
+                <div>
+                    <div class="od-card" style="margin-bottom:1rem">
+                        <h3>Customer</h3>
+                        <div class="od-row"><span class="od-label">Name</span><span>${esc(o.name||"—")}</span></div>
+                        <div class="od-row"><span class="od-label">Phone</span><span>${esc(o.phone||"—")}</span></div>
+                        <div class="od-row"><span class="od-label">Email</span><span>${esc(o.email||"—")}</span></div>
+                        <div class="od-row"><span class="od-label">Address</span><span style="text-align:right;max-width:60%">${esc(safeAddress(o.address))}</span></div>
+                    </div>
+                    <div class="od-card" style="margin-bottom:1rem">
+                        <h3>Payment Proof (UPI screenshot)</h3>
+                        ${proofOk
+                            ? `<a href="${esc(proof)}" target="_blank" rel="noopener"><img class="proof-img" src="${esc(proof)}" alt="Payment proof" onerror="this.parentElement.innerHTML='<p style=color:var(--danger)>Image link broken — open Drive folder</p>'"></a>
+                               <p style="font-size:0.8rem;margin-top:0.5rem"><a href="${esc(proof)}" target="_blank" rel="noopener">Open full image</a></p>`
+                            : `<p style="color:var(--text-muted);font-size:0.9rem">No screenshot found for this order.</p>
+                               <div class="no-print" style="margin-top:0.75rem">
+                                 <label style="font-size:0.85rem;display:block;margin-bottom:0.35rem">Attach payment screenshot (admin)</label>
+                                 <input type="file" id="adminProofFile" accept="image/*" class="form-control" style="font-size:0.85rem">
+                                 <button type="button" class="btn btn-primary btn-sm" style="margin-top:0.5rem" onclick="attachProof()">Save proof</button>
+                               </div>`}
+                    </div>
+                    <div class="od-card">
+                        <h3>Shipping / Tracking</h3>
+                        <div class="form-group"><label>Courier</label>
+                            <input id="courier" class="form-control" value="${esc(o.courier_name||"")}" placeholder="India Post / DTDC / Delhivery">
+                        </div>
+                        <div class="form-group"><label>Tracking Number</label>
+                            <input id="track" class="form-control" value="${esc(o.tracking_number||"")}" placeholder="Tracking ID">
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="saveTrack()">Save Tracking</button>
+                    </div>
+                </div>
+            </div>`;
+            buildInvoice();
+        }
+
+        async function saveStatus() {
+            const st = document.getElementById("st").value;
+            const pay = document.getElementById("pay").value;
+            await API.adminUpdateOrderStatus(orderId, st);
+            await API.adminUpdatePaymentStatus(orderId, pay);
+            order.order_status = st;
+            order.payment_status = pay;
+            Utils.toast("Status saved", "success");
+        }
+
+        async function saveTrack() {
+            const t = document.getElementById("track").value.trim();
+            const c = document.getElementById("courier").value.trim();
+            if (API.adminUpdateTracking) {
+                const res = await API.adminUpdateTracking(orderId, t, c);
+                if (res.success) {
+                    order.tracking_number = t;
+                    order.courier_name = c;
+                    Utils.toast("Tracking saved", "success");
+                } else Utils.toast(res.message || "Failed", "error");
+            } else {
+                order.tracking_number = t;
+                order.courier_name = c;
+                Utils.toast("Saved locally", "info");
+            }
+        }
+
+        async function deleteOrder() {
+            if (!confirm("Delete order " + orderId + " permanently?\n\nExport CSV backup first if needed.")) return;
+            const res = await API.adminDeleteOrder(orderId);
+            // local fallback
+            try {
+                let local = JSON.parse(localStorage.getItem("ptv_demo_orders") || "[]");
+                local = local.filter(o => o.order_id !== orderId);
+                localStorage.setItem("ptv_demo_orders", JSON.stringify(local));
+            } catch(e) {}
+            Utils.toast(res.success ? "Order deleted" : (res.message || "Deleted locally"), res.success ? "success" : "info");
+            setTimeout(() => location.href = "orders.html", 600);
+        }
+
+        function buildInvoice() {
+            const o = order;
+            const s = (API.getStoreSettings && API.getStoreSettings()) || {};
+            document.getElementById("invoiceBox").innerHTML = `
+              <div style="padding:1.5rem;font-family:sans-serif">
+                <div style="display:flex;justify-content:space-between">
+                  <div><strong>${esc(s.store_name||"Pradeep Tech Verse")}</strong><br>${esc(s.address||"")}<br>${esc(s.phone||"")}</div>
+                  <div style="text-align:right"><strong>INVOICE</strong><br>${esc(o.order_id)}<br>${o.created_at?safeDate(o.created_at):""}</div>
+                </div>
+                <hr>
+                <p><strong>Bill To:</strong> ${esc(o.name)} · ${esc(o.phone)} · ${esc(o.email)}<br>${esc(safeAddress(o.address))}</p>
+                <p>${esc(o.product_names||o.products)} · Qty: ${esc(o.quantity)}</p>
+                <p><strong>Total: ${Utils.formatPrice(o.total)}</strong> · ${esc(o.payment_method)} · ${esc(o.payment_status)}</p>
+              </div>`;
+        }
+
+        function printLabel() {
+            const o = order;
+            const s = (API.getStoreSettings && API.getStoreSettings()) || {};
+            const w = window.open("", "_blank");
+            w.document.write(`<html><head><title>Label ${esc(o.order_id)}</title>
+              <style>body{font-family:sans-serif;padding:24px} .box{border:2px solid #000;padding:16px;max-width:400px}</style></head><body>
+              <div class="box">
+                <h3>SHIPPING LABEL · ${esc(o.order_id)}</h3>
+                <p><strong>FROM</strong><br>${esc(s.ship_from_name||s.store_name||"")}<br>${esc(s.ship_from_phone||s.phone||"")}<br>${esc(s.ship_from_address||s.address||"")}</p>
+                <hr>
+                <p><strong>TO</strong><br>${esc(o.name)}<br>${esc(o.phone)}<br>${esc(safeAddress(o.address))}</p>
+              </div>
+              <script>onload=function(){print();}</` + `script></body></html>`);
+            w.document.close();
+        }
+
+        load();
+    </script>
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="images/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="images/favicon-32.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="images/favicon-180.png">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Product – Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="logo"><span class="logo-icon">PT</span><span>Admin</span></div>
+        <nav class="admin-nav">
+            <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+            <a href="products.html" class="active"><span class="nav-icon">📦</span> Products</a>
+            <a href="add-product.html"><span class="nav-icon">➕</span> Add Product</a>
+            <a href="orders.html"><span class="nav-icon">🛒</span> Orders</a>
+            <a href="inventory.html"><span class="nav-icon">📋</span> Inventory</a>
+            <a href="customers.html"><span class="nav-icon">👥</span> Customers</a>
+            <a href="categories.html"><span class="nav-icon">🏷️</span> Categories</a>
+            <a href="coupons.html"><span class="nav-icon">🎟</span> Coupons</a>
+            <a href="reports.html"><span class="nav-icon">📈</span> Reports</a>
+            <a href="finance.html"><span class="nav-icon">💳</span> Finance</a>
+            <a href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
+            <a href="#" onclick="Auth.adminLogout();location.href='login.html'"><span class="nav-icon">🚪</span> Logout</a>
+        </nav>
+    </aside>
+    <div class="admin-main">
+        <div class="admin-topbar">
+            <button class="admin-sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+            <h2 style="font-size:1.1rem">Edit Product</h2>
+            <a href="products.html" class="btn btn-outline btn-sm">← Back</a>
+        </div>
+        <div class="admin-content">
+            <div id="formWrap"><div class="loader-wrap"><div class="spinner"></div></div></div>
+        </div>
+    </div>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/admin-common.js"></script>
+    <script>
+        if (!Auth.isAdminLoggedIn()) location.href = "login.html";
+        const productId = new URLSearchParams(location.search).get("id");
+        let currentImageUrl = "";
+
+        async function load() {
+            if (!productId) {
+                document.getElementById("formWrap").innerHTML = "<p>Product ID missing</p>";
+                return;
+            }
+            const res = await API.getProductById(productId);
+            if (!res.success || !res.data) {
+                document.getElementById("formWrap").innerHTML = `<p>${res.message || "Not found"}</p><a href="products.html">Back</a>`;
+                return;
+            }
+            const p = res.data;
+            currentImageUrl = p.image_url || "";
+            document.getElementById("formWrap").innerHTML = `
+            <form class="admin-form" id="editForm">
+                <div class="form-row">
+                    <div class="form-group"><label>Product Name *</label><input name="name" class="form-control" required value="${esc(p.name)}"></div>
+                    <div class="form-group"><label>Product ID</label><input class="form-control" value="${esc(p.product_id)}" disabled></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>SKU</label><input name="sku" class="form-control" value="${esc(p.sku)}"></div>
+                    <div class="form-group"><label>Category *</label>
+                        <select name="category" id="categorySelect" class="form-control" required>
+                            <option value="">Loading…</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Brand</label><input name="brand" class="form-control" value="${esc(p.brand)}"></div>
+                    <div class="form-group"><label>Original Price</label><input name="original_price" type="number" class="form-control" min="0" value="${p.original_price||0}"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Selling Price *</label><input name="selling_price" type="number" class="form-control" required min="0" value="${p.selling_price||0}"></div>
+                    <div class="form-group"><label>Stock *</label><input name="stock" type="number" class="form-control" required min="0" value="${p.stock||0}"></div>
+                </div>
+                <div class="form-group"><label>Short Description</label><input name="short_description" class="form-control" value="${esc(p.short_description)}"></div>
+                <div class="form-group"><label>Full Description</label><textarea name="description" class="form-control" rows="4">${esc(p.description)}</textarea></div>
+                <div class="form-group"><label>Specifications</label><textarea name="specifications" class="form-control" rows="3">${esc(p.specifications)}</textarea></div>
+                <div class="form-group"><label>What's in the Box</label><textarea name="box_contents" class="form-control" rows="2">${esc(p.box_contents)}</textarea></div>
+                <div class="form-group"><label>Warranty</label><input name="warranty" class="form-control" value="${esc(p.warranty)}"></div>
+                <div class="form-group"><label>Guide URL / YouTube</label>
+                    <div class="form-row">
+                        <input name="guide_url" class="form-control" placeholder="PDF guide URL" value="${esc(p.guide_url)}">
+                        <input name="youtube_url" class="form-control" placeholder="YouTube URL" value="${esc(p.youtube_url)}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Product Image</label>
+                    <div style="display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap">
+                        <img id="preview" src="${esc(p.image_url)}" alt="" style="width:120px;height:120px;object-fit:cover;border-radius:8px;background:var(--bg-elevated);border:1px solid var(--border)">
+                        <div style="flex:1;min-width:200px">
+                            <input type="file" id="imageFile" accept="image/*" class="form-control" style="margin-bottom:0.5rem">
+                            <input type="url" name="image_url" id="imageUrl" class="form-control" placeholder="Or paste image URL" value="${esc(p.image_url)}">
+                            <p style="font-size:0.8rem;color:var(--text-dim);margin-top:0.4rem">Upload → Google Drive (when Apps Script connected). Local mode stores preview.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Min Stock Alert</label><input name="minimum_stock" type="number" class="form-control" value="${p.minimum_stock||5}"></div>
+                    <div class="form-group"><label>Status</label>
+                        <select name="status" class="form-control">
+                            <option value="active" ${(p.status||"active")==="active"?"selected":""}>Active</option>
+                            <option value="inactive" ${p.status==="inactive"?"selected":""}>Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group" style="display:flex;gap:1.5rem;flex-wrap:wrap">
+                    <label><input type="checkbox" name="featured" ${p.featured?"checked":""}> Featured</label>
+                    <label><input type="checkbox" name="best_seller" ${p.best_seller?"checked":""}> Best Seller</label>
+                    <label><input type="checkbox" name="new_arrival" ${p.new_arrival?"checked":""}> New Arrival</label>
+                </div>
+                <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <a href="products.html" class="btn btn-outline">Cancel</a>
+                    <button type="button" class="btn btn-danger" onclick="doDelete()">Delete Product</button>
+                </div>
+            </form>`;
+
+            document.getElementById("imageFile").addEventListener("change", onFilePick);
+            document.getElementById("imageUrl").addEventListener("input", e => {
+                currentImageUrl = e.target.value;
+                document.getElementById("preview").src = currentImageUrl || "";
+            });
+            document.getElementById("editForm").addEventListener("submit", save);
+            fillCategorySelect(p.category);
+        }
+
+        
+        async function fillCategorySelect(selected) {
+            const sel = document.getElementById("categorySelect");
+            if (!sel) return;
+            try {
+                const res = await API.getCategories();
+                let list = (res.success && res.data) ? res.data : [];
+                list = list.filter(c => {
+                    const s = String(c.status == null ? "active" : c.status).toLowerCase();
+                    return s === "active" || s === "true" || s === "1" || s === "";
+                });
+                const names = list.map(c => c.name);
+                // Keep current product category even if inactive/missing
+                if (selected && !names.includes(selected)) names.unshift(selected);
+                if (!names.length) {
+                    sel.innerHTML = '<option value="">No categories</option>';
+                    return;
+                }
+                sel.innerHTML = names.map(c =>
+                    `<option value="${String(c).replace(/"/g,'&quot;')}" ${c===selected?"selected":""}>${c}</option>`
+                ).join("");
+            } catch (e) {
+                if (selected) sel.innerHTML = `<option value="${String(selected).replace(/"/g,'&quot;')}" selected>${selected}</option>`;
+            }
+        }
+
+        function esc(s) {
+            return String(s ?? "").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+        }
+
+        async function onFilePick(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (file.size > 8 * 1024 * 1024) {
+                Utils.toast("Image max 8MB (will be compressed)", "error");
+                e.target.value = "";
+                return;
+            }
+            try {
+                Utils.toast("Compressing image...", "info");
+                const base64 = await Utils.compressImage(file, 1200, 0.75);
+                document.getElementById("preview").src = base64;
+                Utils.toast("Uploading to Google Drive...", "info");
+                const res = await API.uploadImage({
+                    filename: (file.name || "product").replace(/\.[^.]+$/, "") + ".jpg",
+                    mimeType: "image/jpeg",
+                    base64Data: base64
+                });
+                if (res.success && res.data && res.data.url) {
+                    currentImageUrl = res.data.url;
+                    document.getElementById("imageUrl").value = res.data.url;
+                    Utils.toast("Image uploaded to Drive", "success");
+                } else {
+                    // Do NOT save base64 into product — only preview
+                    document.getElementById("preview").src = base64;
+                    Utils.toast(res.message || "Upload failed. Paste a public image URL or fix Drive permission.", "error");
+                }
+            } catch (err) {
+                Utils.toast("Image error: " + (err.message || err), "error");
+            }
+        }
+
+        async function save(e) {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            let imageUrl = (currentImageUrl || fd.get("image_url") || "").trim();
+            // Never send huge data: URLs to Apps Script (causes Network error)
+            if (imageUrl.startsWith("data:")) {
+                Utils.toast("Upload image to Drive first (or paste http image URL). Base64 cannot be saved.", "error");
+                return;
+            }
+            if (imageUrl.includes("...") && imageUrl.length < 100) {
+                Utils.toast("Invalid image URL. Re-upload or paste full http URL.", "error");
+                return;
+            }
+            const payload = {
+                product_id: productId,
+                name: fd.get("name"),
+                sku: fd.get("sku"),
+                category: fd.get("category"),
+                brand: fd.get("brand"),
+                original_price: Number(fd.get("original_price")) || 0,
+                selling_price: Number(fd.get("selling_price")),
+                stock: Number(fd.get("stock")),
+                minimum_stock: Number(fd.get("minimum_stock")) || 5,
+                short_description: fd.get("short_description"),
+                description: fd.get("description"),
+                specifications: fd.get("specifications"),
+                box_contents: fd.get("box_contents"),
+                warranty: fd.get("warranty"),
+                guide_url: fd.get("guide_url"),
+                youtube_url: fd.get("youtube_url"),
+                image_url: imageUrl,
+                status: fd.get("status"),
+                featured: fd.get("featured") === "on",
+                best_seller: fd.get("best_seller") === "on",
+                new_arrival: fd.get("new_arrival") === "on"
+            };
+            const btn = e.target.querySelector("button[type=submit]");
+            btn.disabled = true;
+            btn.textContent = "Saving...";
+            try {
+                const res = await API.adminUpdateProduct(payload);
+                Utils.toast(res.success ? "Product updated – website will show changes" : (res.message || "Save failed"), res.success ? "success" : "error");
+                if (res.success) setTimeout(() => location.href = "products.html", 800);
+            } catch (err) {
+                Utils.toast("Network error: " + (err.message || "Check Apps Script URL"), "error");
+            }
+            btn.disabled = false;
+            btn.textContent = "Save Changes";
+        }
+
+        async function doDelete() {
+            if (!confirm("Delete this product permanently?")) return;
+            const res = await API.adminDeleteProduct(productId);
+            Utils.toast(res.success ? "Deleted" : res.message, res.success ? "success" : "error");
+            if (res.success) location.href = "products.html";
+        }
+
+        load();
+    </script>
+</body>
+</html>

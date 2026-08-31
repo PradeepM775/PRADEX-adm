@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="images/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="images/favicon-32.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="images/favicon-180.png">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard – Pradeep Tech Verse</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+    <style>
+      .dash-hero{background:linear-gradient(135deg,rgba(0,212,255,0.12),rgba(0,255,136,0.06));border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem 1.75rem;margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+      .dash-hero h1{font-size:1.35rem;margin:0 0 0.25rem}
+      .dash-hero p{color:var(--text-muted);margin:0;font-size:0.9rem}
+      .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:1rem;margin-bottom:1.75rem}
+      .stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.15rem 1.1rem;position:relative;overflow:hidden;transition:border-color .2s,transform .2s}
+      .stat-card:hover{border-color:rgba(0,212,255,.35);transform:translateY(-2px)}
+      .stat-card .stat-icon{position:absolute;right:12px;top:12px;font-size:1.4rem;opacity:.35}
+      .stat-card .stat-label{font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:0.35rem}
+      .stat-card .stat-value{font-size:1.55rem;font-weight:700}
+      .dash-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:1.25rem}
+      @media(max-width:900px){.dash-grid{grid-template-columns:1fr}}
+      .panel{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+      .panel-h{padding:0.9rem 1.15rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+      .panel-h h3{margin:0;font-size:0.95rem}
+      .quick-links{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;padding:1rem}
+      .quick-links a{display:flex;align-items:center;gap:0.5rem;padding:0.75rem;background:var(--bg-elevated);border-radius:var(--radius-sm);color:var(--text);font-size:0.88rem;border:1px solid transparent}
+      .quick-links a:hover{border-color:var(--primary);color:var(--primary)}
+    </style>
+</head>
+<body class="admin-body">
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="logo"><span class="logo-icon">PT</span><span>Admin</span></div>
+        <nav class="admin-nav">
+            <a href="dashboard.html" class="active"><span class="nav-icon">📊</span> Dashboard</a>
+            <a href="products.html"><span class="nav-icon">📦</span> Products</a>
+            <a href="add-product.html"><span class="nav-icon">➕</span> Add Product</a>
+            <a href="orders.html"><span class="nav-icon">🛒</span> Orders</a>
+            <a href="inventory.html"><span class="nav-icon">📋</span> Inventory</a>
+            <a href="customers.html"><span class="nav-icon">👥</span> Customers</a>
+            <a href="categories.html"><span class="nav-icon">🏷️</span> Categories</a>
+            <a href="coupons.html"><span class="nav-icon">🎟</span> Coupons</a>
+            <a href="reports.html"><span class="nav-icon">📈</span> Reports</a>
+            <a href="finance.html"><span class="nav-icon">💳</span> Finance</a>
+            <a href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
+            <a href="#" onclick="adminLogout()"><span class="nav-icon">🚪</span> Logout</a>
+        </nav>
+    </aside>
+    <div class="admin-main">
+        <div class="admin-topbar">
+            <button class="admin-sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+            <h2 style="font-size:1.1rem">Dashboard</h2>
+            <span style="color:var(--text-muted);font-size:0.9rem">Pradeep Tech Verse</span>
+        </div>
+        <div class="admin-content">
+            <div class="dash-hero">
+                <div>
+                    <h1>Welcome back 👋</h1>
+                    <p id="heroSub">Loading store overview…</p>
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+                    <a href="add-product.html" class="btn btn-primary btn-sm">+ Product</a>
+                    <a href="orders.html" class="btn btn-outline btn-sm">Orders</a>
+                </div>
+            </div>
+            <div class="stats-grid" id="statsGrid">
+                <div class="loader-wrap" style="grid-column:1/-1"><div class="spinner"></div></div>
+            </div>
+            <div class="dash-grid">
+                <div class="panel">
+                    <div class="panel-h"><h3>Recent Orders</h3><a href="orders.html" style="font-size:0.85rem">View all</a></div>
+                    <div class="admin-table-wrap" style="border:none;border-radius:0">
+                        <table class="admin-table" id="recentOrders">
+                            <thead><tr><th>Order</th><th>Customer</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="panel" id="lowStockPanel" style="margin-bottom:1.25rem;display:none">
+                    <div class="panel-h"><h3>⚠️ Low Stock Alert</h3><a href="inventory.html" style="font-size:0.85rem">Inventory</a></div>
+                    <div id="lowStockList" style="padding:0.75rem 1rem;font-size:0.9rem"></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-h"><h3>Quick Actions</h3></div>
+                    <div class="quick-links">
+                        <a href="add-product.html">➕ Add Product</a>
+                        <a href="inventory.html">📋 Inventory</a>
+                        <a href="orders.html">🛒 Manage Orders</a>
+                        <a href="customers.html">👥 Customers</a>
+                        <a href="categories.html">🏷️ Categories</a>
+                        <a href="settings.html">⚙️ Settings</a>
+                        <a href="../index.html" target="_blank">🌐 View Store</a>
+                        <a href="../products.html" target="_blank">🛍 Products Page</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/admin-common.js"></script>
+    <script>
+        if (!Auth.isAdminLoggedIn()) location.href = "login.html";
+        function adminLogout(){ Auth.adminLogout(); location.href="login.html"; }
+
+        async function load() {
+            try {
+                const [dash, orders] = await Promise.all([
+                    API.adminGetDashboard().catch(() => ({ success: false })),
+                    API.adminGetOrders().catch(() => ({ success: false, data: [] }))
+                ]);
+                if (dash.success && dash.data) {
+                    const d = dash.data;
+                    document.getElementById("heroSub").textContent =
+                        (d.total_orders||0) + " orders · " + (d.total_customers||0) + " customers · " + Utils.formatPrice(d.total_sales||0) + " sales";
+                    document.getElementById("statsGrid").innerHTML = `
+                        <div class="stat-card primary"><span class="stat-icon">📦</span><div class="stat-label">Products</div><div class="stat-value">${d.total_products||0}</div></div>
+                        <div class="stat-card"><span class="stat-icon">📊</span><div class="stat-label">Total Stock</div><div class="stat-value">${d.total_stock||0}</div></div>
+                        <div class="stat-card warning"><span class="stat-icon">⚠️</span><div class="stat-label">Low Stock</div><div class="stat-value">${d.low_stock||0}</div></div>
+                        <div class="stat-card danger"><span class="stat-icon">📭</span><div class="stat-label">Out of Stock</div><div class="stat-value">${d.out_of_stock||0}</div></div>
+                        <div class="stat-card"><span class="stat-icon">🛒</span><div class="stat-label">Orders</div><div class="stat-value">${d.total_orders||0}</div></div>
+                        <div class="stat-card success"><span class="stat-icon">✅</span><div class="stat-label">Delivered</div><div class="stat-value">${d.delivered_orders||0}</div></div>
+                        <div class="stat-card primary"><span class="stat-icon">👥</span><div class="stat-label">Customers</div><div class="stat-value">${d.total_customers||0}</div></div>
+                        <div class="stat-card success"><span class="stat-icon">💰</span><div class="stat-label">Sales</div><div class="stat-value" style="font-size:1.2rem">${Utils.formatPrice(d.total_sales||0)}</div></div>
+                    `;
+                } else {
+                    document.getElementById("heroSub").textContent = "Could not load overview — check Apps Script URL";
+                    document.getElementById("statsGrid").innerHTML = `<div class="stat-card"><div class="stat-label">Status</div><div class="stat-value" style="font-size:1rem">Offline / Error</div></div>`;
+                }
+                if (orders.success) {
+                    const list = (orders.data || []).slice().reverse().slice(0, 8);
+                    document.querySelector("#recentOrders tbody").innerHTML = list.length ? list.map(o => `
+                        <tr>
+                            <td><a href="order-detail.html?id=${encodeURIComponent(o.order_id)}" style="color:var(--primary)">${o.order_id}</a></td>
+                            <td>${o.name || "—"}</td>
+                            <td>${Utils.formatPrice(o.total)}</td>
+                            <td><span class="status-badge status-${(o.order_status||'').toLowerCase().replace(/ /g,'-')}">${o.order_status}</span></td>
+                            <td>${o.created_at ? new Date(o.created_at).toLocaleDateString() : "—"}</td>
+                        </tr>
+                    `).join("") : `<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">No orders yet</td></tr>`;
+                } else {
+                    document.querySelector("#recentOrders tbody").innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">No orders / offline</td></tr>`;
+                }
+                const prods = await API.adminGetProducts().catch(() => ({ success: false }));
+                if (prods.success) {
+                    const low = (prods.data || []).filter(p => p.stock > 0 && p.stock <= (p.minimum_stock || 5));
+                    if (low.length) {
+                        const panel = document.getElementById("lowStockPanel");
+                        if (panel) {
+                            panel.style.display = "block";
+                            document.getElementById("lowStockList").innerHTML = low.map(p =>
+                                `<div style="display:flex;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid var(--border)">
+                                    <span>${p.name}</span><span class="status-badge status-low-stock">${p.stock} left</span></div>`
+                            ).join("");
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById("heroSub").textContent = "Load error: " + (err.message || "see console");
+            }
+        }
+        load();
+    </script>
+</body>
+</html>

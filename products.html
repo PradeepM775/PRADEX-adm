@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="images/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="images/favicon-32.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="images/favicon-180.png">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products – Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="logo"><span class="logo-icon">PT</span><span>Admin</span></div>
+        <nav class="admin-nav">
+            <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+            <a href="products.html" class="active"><span class="nav-icon">📦</span> Products</a>
+            <a href="add-product.html"><span class="nav-icon">➕</span> Add Product</a>
+            <a href="orders.html"><span class="nav-icon">🛒</span> Orders</a>
+            <a href="inventory.html"><span class="nav-icon">📋</span> Inventory</a>
+            <a href="customers.html"><span class="nav-icon">👥</span> Customers</a>
+            <a href="categories.html"><span class="nav-icon">🏷️</span> Categories</a>
+            <a href="coupons.html"><span class="nav-icon">🎟</span> Coupons</a>
+            <a href="reports.html"><span class="nav-icon">📈</span> Reports</a>
+            <a href="finance.html"><span class="nav-icon">💳</span> Finance</a>
+            <a href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
+            <a href="#" onclick="Auth.adminLogout();location.href='login.html'"><span class="nav-icon">🚪</span> Logout</a>
+        </nav>
+    </aside>
+    <div class="admin-main">
+        <div class="admin-topbar">
+            <button class="admin-sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+            <h2 style="font-size:1.1rem">Manage Products</h2>
+            <a href="add-product.html" class="btn btn-primary btn-sm">+ Add Product</a>
+        </div>
+        <div class="admin-content">
+            <div class="filters-bar" style="margin-bottom:1rem;display:flex;gap:0.75rem;flex-wrap:wrap">
+                <input type="search" id="search" placeholder="Search name / ID..." class="form-control" style="max-width:240px">
+                <select id="filterStatus" class="form-control" style="max-width:140px">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                            <th>Status</th>
+                            <th style="min-width:220px">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/admin-common.js"></script>
+    <script>
+        if (!Auth.isAdminLoggedIn()) location.href = "login.html";
+        let products = [];
+
+        async function load() {
+            const res = await API.adminGetProducts();
+            products = res.success ? (res.data || []) : [];
+            render();
+        }
+
+        function render() {
+            const q = (document.getElementById("search").value || "").toLowerCase();
+            const st = document.getElementById("filterStatus").value;
+            let list = products;
+            if (q) list = list.filter(p =>
+                (p.name || "").toLowerCase().includes(q) ||
+                (p.product_id || "").toLowerCase().includes(q)
+            );
+            if (st) list = list.filter(p => (p.status || "active") === st);
+
+            document.getElementById("tbody").innerHTML = list.length ? list.map(p => {
+                const stockClass = p.stock <= 0 ? "out-of-stock" : (p.stock <= (p.minimum_stock || 5) ? "low-stock" : "in-stock");
+                const stockLabel = p.stock <= 0 ? "Out" : (p.stock <= (p.minimum_stock || 5) ? "Low" : "OK");
+                const active = (p.status || "active") === "active";
+                return `<tr>
+                    <td><img src="${Utils.imageUrl(p.image_url, 200) || Utils.placeholderImage(p.name)}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:8px" onerror="this.onerror=null;this.style.opacity=0.3"></td>
+                    <td style="font-size:0.8rem">${p.product_id}</td>
+                    <td>${p.name}</td>
+                    <td>${p.category || "—"}</td>
+                    <td>${Utils.formatPrice(p.selling_price)}</td>
+                    <td><span class="status-badge status-${stockClass}">${p.stock} (${stockLabel})</span></td>
+                    <td><span class="status-badge status-${active ? "active" : "cancelled"}">${active ? "Active" : "Inactive"}</span></td>
+                    <td style="display:flex;gap:0.35rem;flex-wrap:wrap">
+                        <a href="edit-product.html?id=${encodeURIComponent(p.product_id)}" class="btn btn-sm btn-outline">Edit</a>
+                        <button class="btn btn-sm btn-outline" onclick="toggleStatus('${p.product_id}', ${active})">${active ? "Disable" : "Enable"}</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteProduct('${p.product_id}', '${(p.name || "").replace(/'/g, "")}')">Delete</button>
+                    </td>
+                </tr>`;
+            }).join("") : `<tr><td colspan="8" style="text-align:center;color:var(--text-muted)">No products. <a href="add-product.html">Add one</a></td></tr>`;
+        }
+
+                async function toggleStatus(id, currentlyActive) {
+            const res = await API.adminUpdateProduct({
+                product_id: String(id),
+                status: currentlyActive ? "inactive" : "active"
+            });
+            if (API.clearCache) API.clearCache();
+            Utils.toast(res.success ? (currentlyActive ? "Disabled" : "Enabled") : res.message, res.success ? "success" : "error");
+            if (res.success) load();
+        }
+
+        async function deleteProduct(id, name) {
+            if (!confirm("Delete \"" + name + "\" permanently?\nThis cannot be undone.")) return;
+            const res = await API.adminDeleteProduct(String(id));
+            try {
+                let list = JSON.parse(localStorage.getItem("ptv_products") || "[]");
+                const n = list.length;
+                list = list.filter(p => String(p.product_id) !== String(id));
+                if (list.length !== n) localStorage.setItem("ptv_products", JSON.stringify(list));
+            } catch (e) {}
+            if (API.clearCache) API.clearCache();
+            if (res.success) {
+                Utils.toast("Product deleted", "success");
+                products = products.filter(p => String(p.product_id) !== String(id));
+                render();
+            } else {
+                Utils.toast(res.message || "Delete failed", "error");
+            }
+            load();
+        }
+
+        document.getElementById("search").addEventListener("input", render);
+        document.getElementById("filterStatus").addEventListener("change", render);
+        load();
+    </script>
+</body>
+</html>

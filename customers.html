@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="images/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="images/favicon-32.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="images/favicon-180.png">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customers – Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="logo"><span class="logo-icon">PT</span><span>Admin</span></div>
+        <nav class="admin-nav">
+            <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+            <a href="products.html"><span class="nav-icon">📦</span> Products</a>
+            <a href="add-product.html"><span class="nav-icon">➕</span> Add Product</a>
+            <a href="orders.html"><span class="nav-icon">🛒</span> Orders</a>
+            <a href="inventory.html"><span class="nav-icon">📋</span> Inventory</a>
+            <a href="customers.html" class="active"><span class="nav-icon">👥</span> Customers</a>
+            <a href="categories.html"><span class="nav-icon">🏷️</span> Categories</a>
+            <a href="coupons.html"><span class="nav-icon">🎟</span> Coupons</a>
+            <a href="reports.html"><span class="nav-icon">📈</span> Reports</a>
+            <a href="finance.html"><span class="nav-icon">💳</span> Finance</a>
+            <a href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
+            <a href="#" onclick="Auth.adminLogout();location.href='login.html'"><span class="nav-icon">🚪</span> Logout</a>
+        </nav>
+    </aside>
+    <div class="admin-main">
+        <div class="admin-topbar">
+            <button class="admin-sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+            <h2 style="font-size:1.1rem">Customers</h2>
+            <button class="btn btn-outline btn-sm" onclick="exportCSV()">Export CSV</button>
+            <button class="btn btn-primary btn-sm" onclick="document.getElementById('addBox').style.display='block'">+ Add Customer</button>
+        </div>
+        <div class="admin-content">
+            <div id="addBox" class="admin-form" style="display:none;margin-bottom:1.5rem;max-width:560px">
+                <h3 style="margin-bottom:1rem;font-size:1rem">Add Customer</h3>
+                <form id="addForm">
+                    <div class="form-row">
+                        <div class="form-group"><label>Name *</label><input name="name" class="form-control" required></div>
+                        <div class="form-group"><label>Phone</label><input name="phone" class="form-control"></div>
+                    </div>
+                    <div class="form-group"><label>Email *</label><input name="email" type="email" class="form-control" required></div>
+                    <div class="form-group"><label>Address</label><input name="address" class="form-control"></div>
+                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('addBox').style.display='none'">Cancel</button>
+                </form>
+            </div>
+            <div style="margin-bottom:1rem;display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center">
+                <input type="search" id="customerSearch" class="form-control" placeholder="Search name, email, phone, ID…" style="max-width:320px" oninput="filterCustomers()">
+                <span id="customerCount" style="font-size:0.85rem;color:var(--text-muted)"></span>
+            </div>
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Orders</th><th>Spend</th><th>Joined</th></tr>
+                    </thead>
+                    <tbody id="tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/admin-common.js"></script>
+    <script>
+        if (!Auth.isAdminLoggedIn()) location.href = "login.html";
+
+        let allCustomers = [];
+
+        function rowHTML(c) {
+            return `<tr>
+                    <td style="font-size:0.8rem">${c.user_id || "—"}</td>
+                    <td>${c.name || "—"}</td>
+                    <td>${c.email || "—"}</td>
+                    <td>${c.phone || "—"}</td>
+                    <td>${c.total_orders != null ? c.total_orders : "—"}</td>
+                    <td>${c.total_spend != null ? Utils.formatPrice(c.total_spend) : "—"}</td>
+                    <td>${c.created_at ? new Date(c.created_at).toLocaleDateString() : "—"}</td>
+                </tr>`;
+        }
+
+        function filterCustomers() {
+            const q = (document.getElementById("customerSearch")?.value || "").toLowerCase().trim();
+            let list = allCustomers;
+            if (q) {
+                list = allCustomers.filter(c =>
+                    [c.name, c.email, c.phone, c.user_id, c.address].join(" ").toLowerCase().includes(q)
+                );
+            }
+            const tbody = document.getElementById("tbody");
+            tbody.innerHTML = list.length ? list.map(rowHTML).join("") :
+                `<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">${allCustomers.length ? "No match" : "No customers yet. They appear from orders or when you add them."}</td></tr>`;
+            const cnt = document.getElementById("customerCount");
+            if (cnt) cnt.textContent = q ? `${list.length} / ${allCustomers.length}` : `${allCustomers.length} customers`;
+        }
+
+        async function load() {
+            const res = await API.adminGetCustomers();
+            allCustomers = res.success ? (res.data || []) : [];
+            filterCustomers();
+        }
+
+        document.getElementById("addForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const res = await API.adminAddCustomer({
+                name: fd.get("name"),
+                email: fd.get("email"),
+                phone: fd.get("phone"),
+                address: fd.get("address")
+            });
+            Utils.toast(res.success ? "Customer added" : res.message, res.success ? "success" : "error");
+            if (res.success) {
+                e.target.reset();
+                document.getElementById("addBox").style.display = "none";
+                load();
+            }
+        });
+
+        async function exportCSV() {
+            const res = await API.adminGetCustomers();
+            const list = res.success ? (res.data||[]) : [];
+            const headers = ["user_id","name","email","phone","total_orders","total_spend","created_at"];
+            const rows = list.map(c => headers.map(h => '"' + String(c[h]??"").replace(/"/g,'""') + '"').join(","));
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(new Blob([[headers.join(",")].concat(rows).join("\n")],{type:"text/csv"}));
+            a.download = "customers.csv";
+            a.click();
+            Utils.toast("CSV downloaded","success");
+        }
+        load();
+    </script>
+</body>
+</html>

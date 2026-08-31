@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="images/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="images/favicon-32.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="images/favicon-180.png">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance – Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="logo"><span class="logo-icon">PT</span><span>Admin</span></div>
+        <nav class="admin-nav">
+            <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+            <a href="products.html"><span class="nav-icon">📦</span> Products</a>
+            <a href="add-product.html"><span class="nav-icon">➕</span> Add Product</a>
+            <a href="orders.html"><span class="nav-icon">🛒</span> Orders</a>
+            <a href="inventory.html"><span class="nav-icon">📋</span> Inventory</a>
+            <a href="customers.html"><span class="nav-icon">👥</span> Customers</a>
+            <a href="categories.html"><span class="nav-icon">🏷️</span> Categories</a>
+            <a href="coupons.html"><span class="nav-icon">🎟</span> Coupons</a>
+            <a href="reports.html"><span class="nav-icon">📈</span> Reports</a>
+            <a href="finance.html" class="active"><span class="nav-icon">💳</span> Finance</a>
+            <a href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
+            <a href="#" onclick="Auth.adminLogout();location.href='login.html'"><span class="nav-icon">🚪</span> Logout</a>
+        </nav>
+    </aside>
+    <div class="admin-main">
+        <div class="admin-topbar">
+            <button class="admin-sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+            <h2 style="font-size:1.1rem">Finance & Payments</h2>
+        </div>
+        <div class="admin-content">
+            <form class="admin-form" id="finForm" style="max-width:640px">
+                <h3 style="margin-bottom:0.5rem">Payment Methods</h3>
+                <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1.25rem">Checkout page-ல customer பார்க்கும் options. இப்போ COD + UPI மட்டும்.</p>
+
+                <div class="form-group" style="display:flex;gap:1.5rem;flex-wrap:wrap">
+                    <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer">
+                        <input type="checkbox" name="enable_cod" id="enable_cod"> Cash on Delivery (COD)
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer">
+                        <input type="checkbox" name="enable_upi" id="enable_upi"> UPI
+                    </label>
+                </div>
+
+                <hr style="border-color:var(--border);margin:1.5rem 0">
+                <h3 style="margin-bottom:1rem;font-size:1rem">UPI Details</h3>
+                <div class="form-group">
+                    <label>UPI ID *</label>
+                    <input name="upi_id" id="upi_id" class="form-control" placeholder="yourname@paytm / @oksbi / @ybl">
+                </div>
+                <div class="form-group">
+                    <label>Account / Display Name</label>
+                    <input name="upi_name" id="upi_name" class="form-control" placeholder="Pradeep Tech Verse">
+                </div>
+                <div class="form-group">
+                    <label>UPI QR Code</label>
+                    <div style="display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap">
+                        <img id="qrPreview" src="" alt="QR" style="width:140px;height:140px;object-fit:contain;background:#fff;border-radius:8px;border:1px solid var(--border);display:none">
+                        <div style="flex:1;min-width:200px">
+                            <input type="file" id="qrFile" accept="image/*" class="form-control" style="margin-bottom:0.5rem">
+                            <input type="url" name="upi_qr" id="upi_qr" class="form-control" placeholder="Or paste QR image URL">
+                            <p style="font-size:0.8rem;color:var(--text-dim);margin-top:0.4rem">PhonePe / GPay / BHIM QR screenshot upload பண்ணுங்க. Customer checkout-ல இது தெரியும்.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Save Payment Settings</button>
+            </form>
+        </div>
+    </div>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/admin-common.js"></script>
+    <script>
+        if (!Auth.isAdminLoggedIn()) location.href = "login.html";
+        const s = API.getStoreSettings();
+        document.getElementById("enable_cod").checked = s.enable_cod !== false;
+        document.getElementById("enable_upi").checked = s.enable_upi !== false;
+        document.getElementById("upi_id").value = s.upi_id || "";
+        document.getElementById("upi_name").value = s.upi_name || "";
+        document.getElementById("upi_qr").value = s.upi_qr || "";
+        if (s.upi_qr) {
+            const img = document.getElementById("qrPreview");
+            img.src = s.upi_qr;
+            img.style.display = "block";
+        }
+
+        document.getElementById("qrFile").addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) {
+                Utils.toast("QR image max 2MB", "error");
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = () => {
+                document.getElementById("upi_qr").value = reader.result;
+                const img = document.getElementById("qrPreview");
+                img.src = reader.result;
+                img.style.display = "block";
+            };
+            reader.readAsDataURL(file);
+        });
+
+        document.getElementById("upi_qr").addEventListener("input", (e) => {
+            if (e.target.value) {
+                const img = document.getElementById("qrPreview");
+                img.src = e.target.value;
+                img.style.display = "block";
+            }
+        });
+
+        document.getElementById("finForm").addEventListener("submit", (e) => {
+            e.preventDefault();
+            const cur = API.getStoreSettings();
+            cur.enable_cod = document.getElementById("enable_cod").checked;
+            cur.enable_upi = document.getElementById("enable_upi").checked;
+            cur.upi_id = document.getElementById("upi_id").value.trim();
+            cur.upi_name = document.getElementById("upi_name").value.trim();
+            cur.upi_qr = document.getElementById("upi_qr").value.trim();
+            if (cur.enable_upi && !cur.upi_id) {
+                Utils.toast("UPI ID required when UPI is enabled", "error");
+                return;
+            }
+            API.saveStoreSettings(cur);
+            Utils.toast("Payment settings saved – checkout will use these", "success");
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="images/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="images/favicon-32.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="images/favicon-180.png">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login – Pradeep Tech Verse</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="auth-page">
+        <div class="auth-card">
+            <div style="text-align:center;margin-bottom:1.5rem">
+                <span class="logo-icon" style="display:inline-flex;margin-bottom:0.75rem">PT</span>
+                <h1>Admin Login</h1>
+                <p class="subtitle">Pradeep Tech Verse Dashboard</p>
+            </div>
+            <form id="adminLoginForm">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" name="username" class="form-control" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" class="form-control" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Login</button>
+            </form>
+            <p style="text-align:center;margin-top:1.5rem;font-size:0.8rem;color:var(--text-dim)">
+                Use your admin username & password
+            </p>
+            <p style="text-align:center;margin-top:0.5rem"><a href="../index.html">← Back to store</a></p>
+        </div>
+    </div>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/admin-common.js"></script>
+    <script>
+        if (Auth.isAdminLoggedIn()) window.location.href = "dashboard.html";
+
+        document.getElementById("adminLoginForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const btn = e.target.querySelector("button");
+            btn.disabled = true;
+            btn.textContent = "Logging in...";
+            const res = await Auth.adminLogin(String(fd.get("username")||"").trim(), String(fd.get("password")||"").trim());
+            if (res.success) {
+                window.location.href = "dashboard.html";
+            } else {
+                Utils.toast(res.message || "Invalid credentials", "error");
+                btn.disabled = false;
+                btn.textContent = "Login";
+            }
+        });
+    </script>
+</body>
+</html>
