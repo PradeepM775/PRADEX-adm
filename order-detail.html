@@ -26,7 +26,55 @@
         body{background:#fff;color:#000}
       }
       .invoice-box{display:none}
-      @media print{.invoice-box{display:block}.od-grid{display:none}}
+      @media print{
+        body *{visibility:hidden}
+        .invoice-box,.invoice-box *{visibility:visible}
+        .invoice-box{display:block;position:absolute;left:0;top:0;width:100%}
+        .od-grid,.no-print,.admin-sidebar,.admin-topbar{display:none!important}
+      }
+      .inv-wrap{font-family:Inter,Arial,sans-serif;color:#0f172a;max-width:900px;margin:0 auto;padding:24px;background:#fff}
+      .inv-top{display:flex;justify-content:space-between;gap:24px;margin-bottom:24px;flex-wrap:wrap}
+      .inv-logo-row{display:flex;align-items:center;gap:12px}
+      .inv-logo{width:64px;height:64px;border-radius:12px;object-fit:contain;background:#fff}
+      .inv-brand-name{font-size:28px;font-weight:800;letter-spacing:0.04em;color:#0b1b33}
+      .inv-tag{font-size:10px;letter-spacing:0.12em;color:#137fec;font-weight:600;margin-top:2px}
+      .inv-pill{display:inline-block;margin-top:10px;padding:4px 12px;border:1px solid #dbeafe;border-radius:999px;font-size:10px;font-weight:700;color:#137fec;letter-spacing:0.06em}
+      .inv-meta h1{margin:0 0 10px;font-size:28px;font-weight:800;color:#0b1b33;text-align:right}
+      .inv-meta table{font-size:13px;color:#334155}
+      .inv-meta td{padding:3px 0;vertical-align:top}
+      .inv-meta td:first-child{color:#64748b;padding-right:8px}
+      .inv-mid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+      .inv-bill{border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}
+      .inv-bill-h{background:#0b1b33;color:#fff;font-size:12px;font-weight:700;padding:8px 12px}
+      .inv-bill-b{padding:12px 14px;font-size:13px;line-height:1.55;color:#334155}
+      .inv-thanks{background:linear-gradient(135deg,#eff6ff,#f8fafc);border:1px solid #dbeafe;border-radius:12px;padding:14px 16px}
+      .inv-thanks strong{font-size:15px;color:#0b1b33}
+      .inv-thanks-sub{color:#137fec;font-size:12px;font-weight:600;margin:2px 0 8px}
+      .inv-thanks p{margin:0;font-size:13px;color:#64748b;line-height:1.5}
+      .inv-table{width:100%;border-collapse:collapse;margin-bottom:18px;font-size:13px}
+      .inv-table thead th{background:#0b1b33;color:#fff;padding:10px 12px;text-align:left;font-weight:600}
+      .inv-table tbody td{padding:10px 12px;border-bottom:1px solid #e2e8f0}
+      .inv-table tbody tr:nth-child(even){background:#f8fafc}
+      .inv-bottom{display:grid;grid-template-columns:1.1fr 0.9fr;gap:16px;margin-bottom:18px}
+      .inv-note{border:1px solid #e2e8f0;border-radius:12px;padding:14px}
+      .inv-note-h{font-weight:700;font-size:12px;margin-bottom:8px;color:#0b1b33}
+      .inv-note ul{margin:0;padding-left:18px;color:#64748b;font-size:12px;line-height:1.6}
+      .inv-sign{margin-top:14px;font-family:Georgia,serif;font-style:italic;color:#137fec;font-size:18px}
+      .inv-sign span{display:block;font-family:Inter,Arial,sans-serif;font-style:normal;font-size:11px;font-weight:700;color:#0b1b33;margin-top:4px;letter-spacing:0.04em}
+      .inv-sign b{color:#ff7a1a}
+      .inv-totals{border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}
+      .inv-tot-row{display:flex;justify-content:space-between;padding:10px 14px;font-size:13px;border-bottom:1px solid #e2e8f0}
+      .inv-tot-final{background:#0b1b33;color:#fff;font-weight:800;font-size:15px;border:none}
+      .inv-foot-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+      .inv-foot-cards > div{border:1px solid #e2e8f0;border-radius:10px;padding:10px;font-size:11px;color:#64748b;line-height:1.45}
+      .inv-foot-cards strong{display:block;color:#0b1b33;margin-bottom:4px;font-size:12px}
+      .inv-footer{display:flex;justify-content:space-between;align-items:center;background:#0b1b33;color:#fff;border-radius:10px;padding:12px 16px;font-size:12px}
+      .inv-footer span{color:#94a3b8}
+      .inv-copy{color:#94a3b8;font-size:11px}
+      @media(max-width:700px){
+        .inv-mid,.inv-bottom,.inv-foot-cards{grid-template-columns:1fr}
+        .inv-meta h1{text-align:left}
+      }
     </style>
 </head>
 <body class="admin-body">
@@ -176,7 +224,7 @@
             const phoneDigits = String(o.phone || "").replace(/\D/g, "");
             document.getElementById("content").innerHTML = `
             <div class="no-print" style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem">
-                <button class="btn btn-primary btn-sm" onclick="window.print()">🖨 Print Invoice</button>
+                <button class="btn btn-primary btn-sm" onclick="printInvoice()">🖨 Print Invoice</button>
                 <button class="btn btn-outline btn-sm" onclick="printLabel()">📦 Shipping Label</button>
                 ${phoneDigits ? `<a class="btn btn-outline btn-sm" target="_blank"
                    href="https://wa.me/${phoneDigits}?text=${encodeURIComponent("Hi " + (o.name||"") + ", your order " + o.order_id + " status: " + (o.order_status||""))}">WhatsApp</a>` : ""}
@@ -287,20 +335,150 @@
             setTimeout(() => location.href = "orders.html", 600);
         }
 
+        function money(n) {
+            const v = Number(n) || 0;
+            return "₹" + v.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function invoiceLineItems(o) {
+            const names = String(o.product_names || o.products || "").split(",").map(s => s.trim()).filter(Boolean);
+            const qtys = String(o.quantity || "").split(",").map(s => s.trim());
+            const skus = String(o.products || "").split(",").map(s => s.trim());
+            if (!names.length) names.push("Order items");
+            const sub = Number(o.subtotal) || Number(o.total) || 0;
+            const totalQty = qtys.reduce((a, q) => a + (Number(q) || 1), 0) || names.length;
+            // Approximate unit price when line prices not stored
+            const unit = totalQty ? sub / totalQty : sub;
+            return names.map((name, i) => {
+                const q = Number(qtys[i]) || 1;
+                const line = unit * q;
+                return {
+                    name,
+                    sku: skus[i] || "—",
+                    qty: q,
+                    unit: unit,
+                    total: line
+                };
+            });
+        }
+
         function buildInvoice() {
             const o = order;
             const s = (API.getStoreSettings && API.getStoreSettings()) || {};
+            const brand = s.store_name || "PRADEX";
+            const logo = "images/pradex-logo.png";
+            const invNo = "INV-" + (o.order_id || "");
+            const dateStr = o.created_at ? safeDate(o.created_at) : "—";
+            const payMethod = (o.payment_method || "—").toString().toUpperCase() === "COD"
+                ? "Cash on Delivery" : (o.payment_method || "Online Payment");
+            const payStatus = o.payment_status || "Pending";
+            const payColor = /paid|success|completed/i.test(payStatus) ? "#169b68" : "#e6a400";
+            const items = invoiceLineItems(o);
+            const subtotal = Number(o.subtotal) || items.reduce((a, it) => a + it.total, 0);
+            const shipping = Number(o.shipping) || 0;
+            const discount = Number(o.discount) || 0;
+            const total = Number(o.total) || (subtotal + shipping - discount);
+            const rows = items.map((it, i) => `
+                <tr>
+                    <td style="text-align:center;color:#64748b">${i + 1}</td>
+                    <td style="font-weight:600;color:#0f172a">${esc(it.name)}</td>
+                    <td style="color:#64748b;font-size:12px">${esc(it.sku)}</td>
+                    <td style="text-align:center">${it.qty}</td>
+                    <td style="text-align:right">${money(it.unit)}</td>
+                    <td style="text-align:right;font-weight:600">${money(it.total)}</td>
+                </tr>`).join("");
+
             document.getElementById("invoiceBox").innerHTML = `
-              <div style="padding:1.5rem;font-family:sans-serif">
-                <div style="display:flex;justify-content:space-between">
-                  <div><strong>${esc(s.store_name||"Pradeep Tech Verse")}</strong><br>${esc(s.address||"")}<br>${esc(s.phone||"")}</div>
-                  <div style="text-align:right"><strong>INVOICE</strong><br>${esc(o.order_id)}<br>${o.created_at?safeDate(o.created_at):""}</div>
+            <div class="inv-wrap">
+              <div class="inv-top">
+                <div class="inv-brand">
+                  <div class="inv-logo-row">
+                    <img src="${logo}" alt="PRADEX" class="inv-logo" onerror="this.style.display='none'">
+                    <div>
+                      <div class="inv-brand-name">PRADEX</div>
+                      <div class="inv-tag">BUILD. EXPERIMENT. INNOVATE.</div>
+                    </div>
+                  </div>
+                  <div class="inv-pill">IOT COMPONENTS &amp; MAKER STORE</div>
                 </div>
-                <hr>
-                <p><strong>Bill To:</strong> ${esc(o.name)} · ${esc(o.phone)} · ${esc(o.email)}<br>${esc(safeAddress(o.address))}</p>
-                <p>${esc(o.product_names||o.products)} · Qty: ${esc(o.quantity)}</p>
-                <p><strong>Total: ${Utils.formatPrice(o.total)}</strong> · ${esc(o.payment_method)} · ${esc(o.payment_status)}</p>
-              </div>`;
+                <div class="inv-meta">
+                  <h1>INVOICE</h1>
+                  <table>
+                    <tr><td>Invoice No.</td><td>: ${esc(invNo)}</td></tr>
+                    <tr><td>Invoice Date</td><td>: ${esc(dateStr)}</td></tr>
+                    <tr><td>Order ID</td><td>: ${esc(o.order_id)}</td></tr>
+                    <tr><td>Payment Method</td><td>: ${esc(payMethod)}</td></tr>
+                    <tr><td>Payment Status</td><td>: <span style="color:${payColor};font-weight:700">${esc(payStatus)}</span></td></tr>
+                  </table>
+                </div>
+              </div>
+
+              <div class="inv-mid">
+                <div class="inv-bill">
+                  <div class="inv-bill-h">👤 BILL TO</div>
+                  <div class="inv-bill-b">
+                    <strong>${esc(o.name || "Customer")}</strong><br>
+                    ${esc(o.email || "")}<br>
+                    ${esc(safeAddress(o.address))}<br>
+                    ${esc(o.phone || "")}
+                  </div>
+                </div>
+                <div class="inv-thanks">
+                  <strong>${esc(brand)}</strong>
+                  <div class="inv-thanks-sub">Learn. Build. Grow.</div>
+                  <p>Thank you for shopping with us!<br>We truly appreciate your trust.</p>
+                </div>
+              </div>
+
+              <table class="inv-table">
+                <thead>
+                  <tr>
+                    <th style="width:40px">#</th>
+                    <th>Product</th>
+                    <th>SKU</th>
+                    <th style="width:70px">Qty</th>
+                    <th style="width:100px">Unit Price</th>
+                    <th style="width:100px">Total Price</th>
+                  </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+              </table>
+
+              <div class="inv-bottom">
+                <div class="inv-note">
+                  <div class="inv-note-h">📝 NOTE</div>
+                  <ul>
+                    <li>Use your Order ID and email to track your order.</li>
+                    <li>If you have any questions, feel free to contact us.</li>
+                    <li>Goods once sold will not be taken back or exchanged.</li>
+                  </ul>
+                  <div class="inv-sign">Thank You!<br><span>FOR CHOOSING <b>PRADEX</b></span></div>
+                </div>
+                <div class="inv-totals">
+                  <div class="inv-tot-row"><span>Subtotal</span><span>${money(subtotal)}</span></div>
+                  <div class="inv-tot-row"><span>Shipping Charge</span><span>${money(shipping)}</span></div>
+                  <div class="inv-tot-row"><span>Discount</span><span>${money(discount)}</span></div>
+                  <div class="inv-tot-row inv-tot-final"><span>Total Amount</span><span>${money(total)}</span></div>
+                </div>
+              </div>
+
+              <div class="inv-foot-cards">
+                <div><strong>📍 Shipping Address</strong><br>${esc(safeAddress(o.address) !== "—" ? safeAddress(o.address) : (s.ship_from_address || s.address || "Tamil Nadu, India"))}</div>
+                <div><strong>🚚 Need Help?</strong><br>${esc(s.email || "support@pradex.in")}<br>${esc(s.phone || CONFIG.PHONE || "")}</div>
+                <div><strong>✅ Quality Assured</strong><br>All products are tested &amp; verified before shipping.</div>
+                <div><strong>⏱️ Fast Delivery</strong><br>We ship your order quickly and securely.</div>
+              </div>
+
+              <div class="inv-footer">
+                <div><strong>Pradeep Tech Verse</strong><br><span>Learn. Build. Grow.</span></div>
+                <div class="inv-copy">© ${new Date().getFullYear()} Pradeep Tech Verse. All rights reserved.</div>
+              </div>
+            </div>`;
+        }
+
+        function printInvoice() {
+            buildInvoice();
+            window.print();
         }
 
         function printLabel() {

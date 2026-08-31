@@ -5,7 +5,7 @@
 const CONFIG = {
     APP_NAME: "PRADEX",
     TAGLINE: "Build. Experiment. Innovate.",
-    APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyubHm4GV1MYfpuO58jR7WzXbF51yIuQFnhm5bH3ciDLbU_BANl8Xo5kZ3z8GhPc1T_PA/exec", // Replace after deploying Apps Script
+    APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzxJ0vtXlCXMuRKULSb4-m7CxG2FVMmKefR-bUMwRiFlHXF8AKi11jBRqwn8rk6yztJrQ/exec", // Replace after deploying Apps Script
     CURRENCY: "INR",
     CURRENCY_SYMBOL: "₹",
     DEMO_MODE: false, // Set to false for production

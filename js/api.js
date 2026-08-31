@@ -73,10 +73,11 @@ const API = {
 
         const isRead = [
             "getProducts", "getCategories", "getProductById",
-            "getOrders", "getUserOrders", "getOrderStatus", "getCustomers",
+            "getOrders", "getUserOrders", "getCustomers",
             "adminGetDashboard", "adminGetProducts", "adminGetOrders", "getUser",
             "getPaymentSettings", "getStoreSettings", "getCoupons", "validateCoupon"
         ].includes(action);
+        // getOrderStatus is NEVER cached — tracking must stay live
         const cacheKey = isRead ? action + ":" + JSON.stringify(data || {}) : null;
 
         if (cacheKey) {
@@ -374,11 +375,13 @@ const API = {
     },
 
     async adminUpdateTracking(orderId, trackingNumber, courierName) {
-        return this.request("updateTracking", {
+        const res = await this.request("updateTracking", {
             order_id: orderId,
             tracking_number: trackingNumber,
             courier_name: courierName || ""
         });
+        try { this.clearCache(); } catch (e) {}
+        return res;
     },
 
     async adminGetCoupons() {
