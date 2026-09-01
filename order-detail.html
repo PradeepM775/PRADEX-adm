@@ -86,6 +86,7 @@
             <a href="add-product.html"><span class="nav-icon">➕</span> Add Product</a>
             <a href="orders.html" class="active"><span class="nav-icon">🛒</span> Orders</a>
             <a href="inventory.html"><span class="nav-icon">📋</span> Inventory</a>
+            <a href="purchasing.html"><span class="nav-icon">🧾</span> Purchasing</a>
             <a href="customers.html"><span class="nav-icon">👥</span> Customers</a>
             <a href="categories.html"><span class="nav-icon">🏷️</span> Categories</a>
             <a href="coupons.html"><span class="nav-icon">🎟</span> Coupons</a>
@@ -226,6 +227,7 @@
             <div class="no-print" style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem">
                 <button class="btn btn-primary btn-sm" onclick="printInvoice()">🖨 Print Invoice</button>
                 <button class="btn btn-outline btn-sm" onclick="printLabel()">📦 Shipping Label</button>
+                <button class="btn btn-outline btn-sm" onclick="printPackingSlip()">📋 Packing Slip</button>
                 ${phoneDigits ? `<a class="btn btn-outline btn-sm" target="_blank"
                    href="https://wa.me/${phoneDigits}?text=${encodeURIComponent("Hi " + (o.name||"") + ", your order " + o.order_id + " status: " + (o.order_status||""))}">WhatsApp</a>` : ""}
                 <button class="btn btn-sm" style="background:var(--danger);color:#fff;border:none" onclick="deleteOrder()">🗑 Delete Order</button>
@@ -478,7 +480,52 @@
 
         function printInvoice() {
             buildInvoice();
-            window.print();
+            const box = document.getElementById("invoiceBox");
+            if (!box) return;
+            const w = window.open("", "_blank", "noopener,noreferrer,width=920,height=1100");
+            if (!w) {
+                window.print();
+                return;
+            }
+            const styles = Array.from(document.querySelectorAll("style")).map(s => s.innerHTML).join("\n");
+            w.document.open();
+            w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Invoice</title>
+              <style>
+                @page { size: A4; margin: 12mm; }
+                body { margin: 0; background: #fff; }
+                ${styles}
+                .invoice-box { display: block !important; }
+                @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+              </style></head><body>
+              ${box.innerHTML}
+              <script>window.onload=function(){setTimeout(function(){window.print();},200);}</` + `script>
+              </body></html>`);
+            w.document.close();
+        }
+
+        
+        function printPackingSlip() {
+            const o = order;
+            const names = String(o.product_names || o.products || "").split(",").map(s => s.trim()).filter(Boolean);
+            const qtys = String(o.quantity || "").split(",").map(s => s.trim());
+            const rows = (names.length ? names : ["Items"]).map((n,i) =>
+                `<tr><td style="padding:8px;border-bottom:1px solid #ddd">${n}</td><td style="padding:8px;border-bottom:1px solid #ddd;text-align:center">${qtys[i]||1}</td></tr>`
+            ).join("");
+            const w = window.open("", "_blank", "width=700,height=900");
+            if (!w) return;
+            w.document.write(`<!DOCTYPE html><html><head><title>Packing Slip</title>
+              <style>body{font-family:Arial,sans-serif;padding:24px;color:#111}@page{margin:12mm}
+              h1{margin:0 0 4px;font-size:20px} table{width:100%;border-collapse:collapse;margin-top:16px}
+              </style></head><body>
+              <h1>PRADEX – Packing Slip</h1>
+              <p><strong>Order:</strong> ${o.order_id}<br>
+              <strong>Customer:</strong> ${o.name||""} · ${o.phone||""}<br>
+              <strong>Address:</strong> ${safeAddress(o.address)}</p>
+              <table><thead><tr style="background:#0b1b33;color:#fff"><th align="left" style="padding:8px">Product</th><th style="padding:8px">Qty</th></tr></thead>
+              <tbody>${rows}</tbody></table>
+              <p style="margin-top:20px;font-size:12px;color:#666">Checked by: _____________ &nbsp;&nbsp; Date: _____________</p>
+              <script>onload=function(){print();}</`+`script></body></html>`);
+            w.document.close();
         }
 
         function printLabel() {

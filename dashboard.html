@@ -39,6 +39,7 @@
             <a href="add-product.html"><span class="nav-icon">➕</span> Add Product</a>
             <a href="orders.html"><span class="nav-icon">🛒</span> Orders</a>
             <a href="inventory.html"><span class="nav-icon">📋</span> Inventory</a>
+            <a href="purchasing.html"><span class="nav-icon">🧾</span> Purchasing</a>
             <a href="customers.html"><span class="nav-icon">👥</span> Customers</a>
             <a href="categories.html"><span class="nav-icon">🏷️</span> Categories</a>
             <a href="coupons.html"><span class="nav-icon">🎟</span> Coupons</a>
@@ -127,6 +128,38 @@
                         <div class="stat-card primary"><span class="stat-icon">👥</span><div class="stat-label">Customers</div><div class="stat-value">${d.total_customers||0}</div></div>
                         <div class="stat-card success"><span class="stat-icon">💰</span><div class="stat-label">Sales</div><div class="stat-value" style="font-size:1.2rem">${Utils.formatPrice(d.total_sales||0)}</div></div>
                     `;
+
+                // Action panels: today / pending UPI / COD / low stock
+                const orderList = (orders.success && orders.data) ? orders.data : [];
+                const today = new Date().toISOString().slice(0, 10);
+                const isToday = (d) => String(d || "").slice(0, 10) === today;
+                const todayOrders = orderList.filter(o => isToday(o.created_at));
+                const pendingUpi = orderList.filter(o =>
+                    String(o.payment_method || "").toLowerCase().includes("upi") &&
+                    !/paid|success|completed/i.test(String(o.payment_status || ""))
+                );
+                const codPending = orderList.filter(o =>
+                    String(o.payment_method || "").toLowerCase() === "cod" &&
+                    !/paid|collected|success/i.test(String(o.payment_status || "")) &&
+                    !/cancelled/i.test(String(o.order_status || ""))
+                );
+                const ap = document.getElementById("actionPanels");
+                if (ap) {
+                    ap.innerHTML = `
+                    <div class="panel"><div class="panel-h"><h3>Today's orders</h3><a href="orders.html">View</a></div>
+                      <div style="padding:1rem;font-size:1.5rem;font-weight:700">${todayOrders.length}</div>
+                      <div style="padding:0 1rem 1rem;color:var(--text-muted);font-size:.85rem">${Utils.formatPrice(todayOrders.reduce((a,o)=>a+(Number(o.total)||0),0))} value</div></div>
+                    <div class="panel"><div class="panel-h"><h3>Pending UPI</h3><a href="orders.html">View</a></div>
+                      <div style="padding:1rem;font-size:1.5rem;font-weight:700;color:var(--warning)">${pendingUpi.length}</div>
+                      <div style="padding:0 1rem 1rem;font-size:.8rem;color:var(--text-muted)">${pendingUpi.slice(0,3).map(o=>o.order_id).join(", ")||"None"}</div></div>
+                    <div class="panel"><div class="panel-h"><h3>COD to collect</h3><a href="finance.html">Finance</a></div>
+                      <div style="padding:1rem;font-size:1.5rem;font-weight:700">${codPending.length}</div>
+                      <div style="padding:0 1rem 1rem;color:var(--text-muted);font-size:.85rem">${Utils.formatPrice(codPending.reduce((a,o)=>a+(Number(o.total)||0),0))} pending</div></div>
+                    <div class="panel"><div class="panel-h"><h3>Low stock</h3><a href="purchasing.html">Purchasing</a></div>
+                      <div style="padding:1rem;font-size:1.5rem;font-weight:700;color:var(--danger)">${d.low_stock||0}</div>
+                      <div style="padding:0 1rem 1rem;font-size:.85rem"><a href="purchasing.html">Create purchase list →</a></div></div>`;
+                }
+
                 } else {
                     document.getElementById("heroSub").textContent = "Could not load overview — check Apps Script URL";
                     document.getElementById("statsGrid").innerHTML = `<div class="stat-card"><div class="stat-label">Status</div><div class="stat-value" style="font-size:1rem">Offline / Error</div></div>`;

@@ -324,6 +324,10 @@ const API = {
         return this.request("createUser", data);
     },
 
+    getPaymentSettings() {
+        return { success: true, data: this.getStoreSettings() };
+    },
+
     getStoreSettings() {
         const defaults = {
             store_name: CONFIG.APP_NAME,

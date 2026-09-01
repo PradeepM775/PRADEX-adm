@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="images/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="images/favicon-32.png" sizes="32x32">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchasing – Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+    <style>
+      .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:1rem;margin-bottom:1.25rem}
+      .stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem}
+      .stat-label{font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em}
+      .stat-value{font-size:1.4rem;font-weight:700;margin-top:.25rem}
+      .toolbar{display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center}
+      .toolbar .form-control{max-width:200px}
+      #reportBox{display:none}
+      @media print{
+        body *{visibility:hidden}
+        #reportBox,#reportBox *{visibility:visible}
+        #reportBox{display:block;position:absolute;left:0;top:0;width:100%;padding:20px;background:#fff;color:#000}
+        .admin-sidebar,.admin-topbar,.no-print{display:none!important}
+      }
+      .pur-table input[type=number]{width:80px;padding:.35rem;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text)}
+    </style>
+</head>
+<body class="admin-body">
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="logo"><span class="logo-icon">PT</span><span>Admin</span></div>
+        <nav class="admin-nav">
+            <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+            <a href="products.html"><span class="nav-icon">📦</span> Products</a>
+            <a href="add-product.html"><span class="nav-icon">➕</span> Add Product</a>
+            <a href="orders.html"><span class="nav-icon">🛒</span> Orders</a>
+            <a href="inventory.html"><span class="nav-icon">📋</span> Inventory</a>
+            <a href="purchasing.html" class="active"><span class="nav-icon">🧾</span> Purchasing</a>
+            <a href="customers.html"><span class="nav-icon">👥</span> Customers</a>
+            <a href="categories.html"><span class="nav-icon">🏷️</span> Categories</a>
+            <a href="coupons.html"><span class="nav-icon">🎟</span> Coupons</a>
+            <a href="reports.html"><span class="nav-icon">📈</span> Reports</a>
+            <a href="finance.html"><span class="nav-icon">💳</span> Finance</a>
+            <a href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
+            <a href="#" onclick="adminLogout()"><span class="nav-icon">🚪</span> Logout</a>
+        </nav>
+    </aside>
+    <div class="admin-main">
+        <div class="admin-topbar">
+            <button class="admin-sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+            <h2 style="font-size:1.1rem">Purchasing / Reorder</h2>
+            <span style="color:var(--text-muted);font-size:0.9rem">PRADEX</span>
+        </div>
+        <div class="admin-content">
+            <p class="no-print" style="color:var(--text-muted);margin:0 0 1rem;font-size:.9rem">Low / out-of-stock products → suggested buy qty → print or CSV purchase report.</p>
+            <div class="stats-grid no-print" id="stats"></div>
+            <div class="toolbar no-print">
+                <select id="filter" class="form-control" onchange="render()">
+                    <option value="low">Low + Out of stock</option>
+                    <option value="out">Out of stock only</option>
+                    <option value="all">All products</option>
+                </select>
+                <input type="search" id="q" class="form-control" placeholder="Search..." oninput="render()">
+                <button class="btn btn-outline btn-sm" onclick="selectAll(true)">Select all</button>
+                <button class="btn btn-outline btn-sm" onclick="selectAll(false)">Clear</button>
+                <button class="btn btn-primary btn-sm" onclick="printReport()">🖨 Print report</button>
+                <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ CSV</button>
+            </div>
+            <div class="admin-table-wrap no-print">
+                <table class="admin-table pur-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>Stock</th>
+                            <th>Min</th>
+                            <th>Suggested</th>
+                            <th>Unit cost</th>
+                            <th>Line total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody"><tr><td colspan="8">Loading...</td></tr></tbody>
+                </table>
+            </div>
+            <div id="reportBox"></div>
+        </div>
+    </div>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/admin-common.js"></script>
+    <script>
+        if (!Auth.isAdminLoggedIn()) location.href = "login.html";
+        let products = [];
+
+        function suggestedQty(p) {
+            const stock = Number(p.stock) || 0;
+            const min = Number(p.minimum_stock) || Number(p.min_stock) || 5;
+            return Math.max(min - stock, stock <= 0 ? Math.max(min, 5) : 0);
+        }
+
+        function unitCost(p) {
+            return Number(p.cost_price) || Number(p.purchase_price) || Number(p.selling_price) || 0;
+        }
+
+        function filtered() {
+            const mode = document.getElementById("filter").value;
+            const q = (document.getElementById("q").value || "").toLowerCase().trim();
+            return products.filter(p => {
+                const stock = Number(p.stock) || 0;
+                const min = Number(p.minimum_stock) || Number(p.min_stock) || 5;
+                const low = stock <= 0 || stock <= min;
+                if (mode === "out" && stock > 0) return false;
+                if (mode === "low" && !low) return false;
+                if (q && !(String(p.name||"").toLowerCase().includes(q) || String(p.category||"").toLowerCase().includes(q) || String(p.product_id||"").toLowerCase().includes(q))) return false;
+                return true;
+            });
+        }
+
+        function render() {
+            const list = filtered();
+            let low = 0, out = 0, est = 0;
+            products.forEach(p => {
+                const s = Number(p.stock)||0;
+                const min = Number(p.minimum_stock)||Number(p.min_stock)||5;
+                if (s <= 0) out++;
+                else if (s <= min) low++;
+            });
+            document.getElementById("stats").innerHTML = `
+              <div class="stat-card"><div class="stat-label">Low stock</div><div class="stat-value">${low}</div></div>
+              <div class="stat-card"><div class="stat-label">Out of stock</div><div class="stat-value">${out}</div></div>
+              <div class="stat-card"><div class="stat-label">Listed</div><div class="stat-value">${list.length}</div></div>
+              <div class="stat-card"><div class="stat-label">Est. (selected)</div><div class="stat-value" id="estVal" style="font-size:1.1rem">—</div></div>`;
+
+            const tbody = document.getElementById("tbody");
+            if (!list.length) {
+                tbody.innerHTML = `<tr><td colspan="8" style="color:var(--text-muted)">No products match filter</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = list.map(p => {
+                const sug = suggestedQty(p);
+                const cost = unitCost(p);
+                const id = String(p.product_id||"");
+                return `<tr>
+                  <td><input type="checkbox" class="pcheck" data-id="${id}" ${sug>0?"checked":""} onchange="updateEst()"></td>
+                  <td><strong>${esc(p.name)}</strong><div style="font-size:.75rem;color:var(--text-muted)">${esc(id)}</div></td>
+                  <td>${esc(p.category||"—")}</td>
+                  <td>${Number(p.stock)||0}</td>
+                  <td>${Number(p.minimum_stock)||Number(p.min_stock)||5}</td>
+                  <td><input type="number" min="0" class="pqty" data-id="${id}" value="${sug}" onchange="updateEst()"></td>
+                  <td><input type="number" min="0" step="0.01" class="pcost" data-id="${id}" value="${cost}" onchange="updateEst()"></td>
+                  <td class="pline" data-id="${id}">${Utils.formatPrice(sug*cost)}</td>
+                </tr>`;
+            }).join("");
+            updateEst();
+        }
+
+        function esc(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+        function selectedRows() {
+            const rows = [];
+            document.querySelectorAll(".pcheck:checked").forEach(c => {
+                const id = c.getAttribute("data-id");
+                const p = products.find(x => String(x.product_id) === id);
+                if (!p) return;
+                const qty = Number(document.querySelector(`.pqty[data-id="${(id||"").replace(/"/g,"")}"]`)?.value) || 0;
+                const cost = Number(document.querySelector(`.pcost[data-id="${(id||"").replace(/"/g,"")}"]`)?.value) || 0;
+                rows.push({ product_id: id, name: p.name, category: p.category||"", qty, cost, total: qty*cost, stock: Number(p.stock)||0 });
+            });
+            return rows;
+        }
+
+        function updateEst() {
+            let sum = 0;
+            selectedRows().forEach(r => {
+                sum += r.total;
+                const cell = document.querySelector(`.pline[data-id="${String(r.product_id||"").replace(/"/g,"")}"]`);
+                if (cell) cell.textContent = Utils.formatPrice(r.total);
+            });
+            const el = document.getElementById("estVal");
+            if (el) el.textContent = Utils.formatPrice(sum);
+        }
+
+        function selectAll(on) {
+            document.querySelectorAll(".pcheck").forEach(c => { c.checked = !!on; });
+            updateEst();
+        }
+
+        function printReport() {
+            const rows = selectedRows().filter(r => r.qty > 0);
+            if (!rows.length) { Utils.toast("Select products with qty > 0", "error"); return; }
+            const total = rows.reduce((a,r)=>a+r.total,0);
+            const date = new Date().toLocaleString("en-IN");
+            const rid = "PO-" + Date.now().toString().slice(-8);
+            document.getElementById("reportBox").innerHTML = `
+              <div style="font-family:Arial,sans-serif;color:#0b1b33">
+                <h1 style="margin:0 0 4px">PRADEX – Purchase Order</h1>
+                <p style="margin:0 0 16px;color:#64748b">${rid} · ${date}</p>
+                <table width="100%" cellpadding="8" cellspacing="0" style="border-collapse:collapse;font-size:13px">
+                  <thead><tr style="background:#0b1b33;color:#fff">
+                    <th align="left">#</th><th align="left">Product</th><th>Stock</th><th>Buy qty</th><th align="right">Unit cost</th><th align="right">Total</th>
+                  </tr></thead>
+                  <tbody>
+                  ${rows.map((r,i)=>`<tr style="border-bottom:1px solid #e2e8f0">
+                    <td>${i+1}</td><td><strong>${esc(r.name)}</strong><br><span style="color:#64748b;font-size:11px">${esc(r.product_id)}</span></td>
+                    <td align="center">${r.stock}</td><td align="center">${r.qty}</td>
+                    <td align="right">${Utils.formatPrice(r.cost)}</td><td align="right"><strong>${Utils.formatPrice(r.total)}</strong></td>
+                  </tr>`).join("")}
+                  </tbody>
+                </table>
+                <p style="text-align:right;font-size:16px;font-weight:800;margin-top:16px">Estimated total: ${Utils.formatPrice(total)}</p>
+                <p style="color:#64748b;font-size:12px">Note: Verify supplier rates before placing order. Update stock after goods received.</p>
+              </div>`;
+            window.print();
+        }
+
+        function exportCSV() {
+            const rows = selectedRows().filter(r => r.qty > 0);
+            if (!rows.length) { Utils.toast("Select products first", "error"); return; }
+            downloadCSV("purchase-list-"+new Date().toISOString().slice(0,10)+".csv",
+                ["product_id","name","category","current_stock","buy_qty","unit_cost","line_total"],
+                rows.map(r => ({ product_id:r.product_id, name:r.name, category:r.category, current_stock:r.stock, buy_qty:r.qty, unit_cost:r.cost, line_total:r.total }))
+            );
+            Utils.toast("CSV downloaded", "success");
+        }
+
+        async function load() {
+            try {
+                const res = await API.adminGetProducts();
+                products = (res.success && res.data) ? res.data : [];
+                render();
+            } catch (e) {
+                document.getElementById("tbody").innerHTML = `<tr><td colspan="8">Failed to load products</td></tr>`;
+            }
+        }
+        load();
+    </script>
+</body>
+</html>

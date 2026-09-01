@@ -20,6 +20,7 @@
             <a href="add-product.html"><span class="nav-icon">➕</span> Add Product</a>
             <a href="orders.html"><span class="nav-icon">🛒</span> Orders</a>
             <a href="inventory.html"><span class="nav-icon">📋</span> Inventory</a>
+            <a href="purchasing.html"><span class="nav-icon">🧾</span> Purchasing</a>
             <a href="customers.html"><span class="nav-icon">👥</span> Customers</a>
             <a href="categories.html"><span class="nav-icon">🏷️</span> Categories</a>
             <a href="coupons.html"><span class="nav-icon">🎟</span> Coupons</a>
@@ -73,7 +74,22 @@
                 <button type="submit" class="btn btn-primary">Save Payment Settings</button>
             </form>
         </div>
-    </div>
+    
+            <div class="admin-card" style="margin-top:1.5rem" id="codSection">
+                <h2 style="margin:0 0 0.5rem;font-size:1.1rem">COD Collection Tracker</h2>
+                <p style="color:var(--text-muted);font-size:0.9rem;margin:0 0 1rem">Cash on Delivery orders not marked paid/collected yet.</p>
+                <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem">
+                    <div class="stat-card" style="padding:0.85rem 1rem;min-width:120px"><div style="font-size:0.7rem;color:var(--text-muted)">PENDING</div><div id="codCount" style="font-size:1.3rem;font-weight:700">0</div></div>
+                    <div class="stat-card" style="padding:0.85rem 1rem;min-width:140px"><div style="font-size:0.7rem;color:var(--text-muted)">AMOUNT</div><div id="codAmount" style="font-size:1.3rem;font-weight:700">₹0</div></div>
+                </div>
+                <div class="admin-table-wrap">
+                    <table class="admin-table">
+                        <thead><tr><th>Order</th><th>Customer</th><th>Phone</th><th>Status</th><th>Amount</th><th>Action</th></tr></thead>
+                        <tbody id="codBody"><tr><td colspan="6">Loading...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+</div>
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
@@ -133,6 +149,51 @@
             API.saveStoreSettings(cur);
             Utils.toast("Payment settings saved – checkout will use these", "success");
         });
-    </script>
+    
+        async function loadCodTracker() {
+            try {
+                const res = await API.adminGetOrders();
+                const list = (res.success && res.data) ? res.data : [];
+                const cod = list.filter(o =>
+                    String(o.payment_method||"").toLowerCase()==="cod" &&
+                    !/paid|collected|success/i.test(String(o.payment_status||"")) &&
+                    !/cancelled/i.test(String(o.order_status||""))
+                );
+                const amt = cod.reduce((a,o)=>a+(Number(o.total)||0),0);
+                const cEl = document.getElementById("codCount");
+                const aEl = document.getElementById("codAmount");
+                if (cEl) cEl.textContent = cod.length;
+                if (aEl) aEl.textContent = Utils.formatPrice(amt);
+                const body = document.getElementById("codBody");
+                if (!body) return;
+                if (!cod.length) {
+                    body.innerHTML = `<tr><td colspan="6" style="color:var(--text-muted)">No pending COD collections</td></tr>`;
+                    return;
+                }
+                body.innerHTML = cod.map(o => `
+                    <tr>
+                        <td><a href="order-detail.html?id=${encodeURIComponent(o.order_id)}" style="color:var(--primary)">${o.order_id}</a></td>
+                        <td>${o.name||"—"}</td>
+                        <td>${o.phone||"—"}</td>
+                        <td>${o.order_status||"—"}</td>
+                        <td>${Utils.formatPrice(o.total)}</td>
+                        <td><button class="btn btn-sm btn-primary" onclick="markCodCollected('${String(o.order_id).replace(/'/g,"")}')">Mark collected</button></td>
+                    </tr>`).join("");
+            } catch (e) {
+                const body = document.getElementById("codBody");
+                if (body) body.innerHTML = `<tr><td colspan="6">Could not load orders</td></tr>`;
+            }
+        }
+        async function markCodCollected(id) {
+            try {
+                const res = await API.adminUpdatePaymentStatus(id, "Paid");
+                Utils.toast(res.success ? "Marked collected" : (res.message||"Failed"), res.success?"success":"error");
+                if (res.success) loadCodTracker();
+            } catch (e) {
+                Utils.toast("Error updating payment", "error");
+            }
+        }
+        if (typeof Auth !== "undefined" && Auth.isAdminLoggedIn()) loadCodTracker();
+</script>
 </body>
 </html>

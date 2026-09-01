@@ -28,6 +28,7 @@
             <a href="add-product.html"><span class="nav-icon">➕</span> Add Product</a>
             <a href="orders.html"><span class="nav-icon">🛒</span> Orders</a>
             <a href="inventory.html"><span class="nav-icon">📋</span> Inventory</a>
+            <a href="purchasing.html"><span class="nav-icon">🧾</span> Purchasing</a>
             <a href="customers.html"><span class="nav-icon">👥</span> Customers</a>
             <a href="categories.html"><span class="nav-icon">🏷️</span> Categories</a>
             <a href="coupons.html"><span class="nav-icon">🎟</span> Coupons</a>
@@ -41,6 +42,9 @@
         <div class="admin-topbar">
             <button class="admin-sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
             <h2 style="font-size:1.1rem">Reports</h2>
+            <label style="font-size:0.85rem;color:var(--text-muted)">From <input type="date" id="fromDate" class="form-control" style="display:inline-block;width:auto;margin-left:0.35rem"></label>
+            <label style="font-size:0.85rem;color:var(--text-muted)">To <input type="date" id="toDate" class="form-control" style="display:inline-block;width:auto;margin-left:0.35rem"></label>
+            <button class="btn btn-primary btn-sm" onclick="load()">Apply</button>
             <button class="btn btn-outline btn-sm" onclick="exportCSV()">Export Orders CSV</button>
         </div>
         <div class="admin-content" id="content">
@@ -58,8 +62,24 @@
 
         async function load() {
             const [r, o] = await Promise.all([API.adminGetReports(), API.adminGetOrders()]);
-            report = r.success ? r.data : {};
-            orders = o.success ? (o.data||[]) : [];
+            report = r.success && r.data ? r.data : {};
+            orders = filterByDate(o.success ? (o.data||[]) : []);
+            // Recompute sales stats from filtered orders
+            const sales = orders.reduce((a,x)=>a+(Number(x.total)||0),0);
+            const by_day = {}; const by_status = {};
+            orders.forEach(x => {
+                const d = String(x.created_at||"").slice(0,10) || "unknown";
+                by_day[d] = (by_day[d]||0) + (Number(x.total)||0);
+                const st = x.order_status || "Unknown";
+                by_status[st] = (by_status[st]||0) + 1;
+            });
+            report = Object.assign({}, report, {
+                total_sales: sales,
+                total_orders: orders.length,
+                avg_order: orders.length ? sales/orders.length : 0,
+                by_day, by_status
+            });
+
             const maxDay = Math.max(1, ...Object.values(report.by_day||{x:1}));
             const days = Object.entries(report.by_day||{}).sort((a,b)=>a[0]<b[0]?1:-1).slice(0,14);
             const statuses = Object.entries(report.by_status||{});
@@ -91,6 +111,17 @@
                 <tbody>${report.low_stock.map(p=>`<tr><td>${p.name}</td><td class="status-badge status-low-stock">${p.stock}</td></tr>`).join("")}</tbody></table>
                 ` : "<p style='color:var(--text-muted)'>All good — no low stock</p>"}
             </div>`;
+        }
+
+        function filterByDate(list) {
+            const from = document.getElementById("fromDate")?.value || "";
+            const to = document.getElementById("toDate")?.value || "";
+            return (list || []).filter(o => {
+                const d = String(o.created_at || "").slice(0, 10);
+                if (from && d < from) return false;
+                if (to && d > to) return false;
+                return true;
+            });
         }
 
         function exportCSV() {
