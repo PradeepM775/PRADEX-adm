@@ -228,8 +228,7 @@
                 <button class="btn btn-primary btn-sm" onclick="printInvoice()">🖨 Print Invoice</button>
                 <button class="btn btn-outline btn-sm" onclick="printLabel()">📦 Shipping Label</button>
                 <button class="btn btn-outline btn-sm" onclick="printPackingSlip()">📋 Packing Slip</button>
-                ${phoneDigits ? `<a class="btn btn-outline btn-sm" target="_blank"
-                   href="https://wa.me/${phoneDigits}?text=${encodeURIComponent("Hi " + (o.name||"") + ", your order " + o.order_id + " status: " + (o.order_status||""))}">WhatsApp</a>` : ""}
+                ${phoneDigits ? `<button type="button" class="btn btn-outline btn-sm" onclick='sendOrderWhatsApp()'>WhatsApp</button>` : ""}
                 <button class="btn btn-sm" style="background:var(--danger);color:#fff;border:none" onclick="deleteOrder()">🗑 Delete Order</button>
             </div>
             <div class="od-grid">
@@ -526,6 +525,17 @@
               <p style="margin-top:20px;font-size:12px;color:#666">Checked by: _____________ &nbsp;&nbsp; Date: _____________</p>
               <script>onload=function(){print();}</`+`script></body></html>`);
             w.document.close();
+        }
+
+
+        function sendOrderWhatsApp() {
+            const o = order;
+            if (!o) return;
+            let phone = String(o.phone || "").replace(/\D/g, "");
+            if (phone.length === 10) phone = "91" + phone;
+            const msg = (Utils.wa && Utils.wa.orderUpdate) ? Utils.wa.orderUpdate(o) : ("Hi " + (o.name||"") + ", order " + o.order_id + " status: " + (o.order_status||""));
+            if (!phone) { Utils.toast("Customer phone missing", "error"); return; }
+            window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msg), "_blank");
         }
 
         function printLabel() {

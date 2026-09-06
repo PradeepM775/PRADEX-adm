@@ -180,16 +180,32 @@
                 }
                 const prods = await API.adminGetProducts().catch(() => ({ success: false }));
                 if (prods.success) {
-                    const low = (prods.data || []).filter(p => p.stock > 0 && p.stock <= (p.minimum_stock || 5));
+                    const low = (prods.data || []).filter(p => Number(p.stock) <= (Number(p.minimum_stock) || 5));
+                    const out = (prods.data || []).filter(p => Number(p.stock) <= 0);
+                    window._lowStockList = low;
                     if (low.length) {
                         const panel = document.getElementById("lowStockPanel");
                         if (panel) {
                             panel.style.display = "block";
-                            document.getElementById("lowStockList").innerHTML = low.map(p =>
-                                `<div style="display:flex;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid var(--border)">
-                                    <span>${p.name}</span><span class="status-badge status-low-stock">${p.stock} left</span></div>`
-                            ).join("");
+                            const listEl = document.getElementById("lowStockList");
+                            if (listEl) {
+                                listEl.innerHTML = low.map(p =>
+                                    `<div style="display:flex;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid var(--border)">
+                                        <span>${p.name}</span><span class="status-badge status-low-stock">${p.stock} left</span></div>`
+                                ).join("") + `<div style="margin-top:0.85rem;display:flex;gap:0.5rem;flex-wrap:wrap">
+                                    <button type="button" class="btn btn-primary btn-sm" onclick="alertLowStockWA()">WhatsApp alert</button>
+                                    <a class="btn btn-outline btn-sm" href="purchasing.html">Open Purchasing</a>
+                                </div>`;
+                            }
                         }
+                        // Once per day auto-hint toast
+                        try {
+                            const day = new Date().toISOString().slice(0,10);
+                            if (localStorage.getItem("ptv_lowstock_hint") !== day && low.length >= 1) {
+                                localStorage.setItem("ptv_lowstock_hint", day);
+                                if (typeof Utils !== "undefined") Utils.toast(low.length + " product(s) low on stock", "info");
+                            }
+                        } catch (e) {}
                     }
                 }
             } catch (err) {
@@ -197,6 +213,21 @@
                 document.getElementById("heroSub").textContent = "Load error: " + (err.message || "see console");
             }
         }
+
+        function alertLowStockWA() {
+            const low = window._lowStockList || [];
+            if (!low.length) { Utils.toast("No low stock items", "info"); return; }
+            const store = (API.getStoreSettings && API.getStoreSettings()) || {};
+            let phone = String(store.whatsapp_admin_number || store.whatsapp || "").replace(/\D/g, "");
+            if (phone.length === 10) phone = "91" + phone;
+            const msg = (Utils.wa && Utils.wa.lowStock) ? Utils.wa.lowStock(low) : ("Low stock: " + low.length);
+            if (!phone) {
+                navigator.clipboard.writeText(msg).then(() => Utils.toast("Alert copied — set Admin WhatsApp in Settings", "info")).catch(() => alert(msg));
+                return;
+            }
+            window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msg), "_blank");
+        }
+
         load();
     </script>
 </body>

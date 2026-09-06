@@ -141,3 +141,78 @@ Utils.compressImage = function(file, maxEdge = 1200, quality = 0.75) {
         reader.readAsDataURL(file);
     });
 };
+
+
+/** WhatsApp-friendly formatted messages (WhatsApp supports *bold*, _italic_, line breaks) */
+Utils.wa = {
+    orderUpdate(order) {
+        const o = order || {};
+        const name = (o.name || "Customer").toString().trim().split(/\s+/)[0] || "Customer";
+        const id = o.order_id || "—";
+        const status = o.order_status || "Confirmed";
+        const pay = o.payment_status || "—";
+        const method = (o.payment_method || "—").toString().toUpperCase();
+        const total = (typeof Utils.formatPrice === "function")
+            ? Utils.formatPrice(o.total)
+            : ("₹" + (Number(o.total) || 0));
+        const products = (o.product_names || o.products || "—").toString();
+        const track = o.tracking_number
+            ? ("\n🚚 *Courier:* " + (o.courier_name || "—") + "\n🔎 *Tracking:* " + o.tracking_number)
+            : "";
+        const site = (typeof CONFIG !== "undefined" && CONFIG.SITE_URL)
+            ? CONFIG.SITE_URL
+            : "https://pradeepm775.github.io/pradex-ecommerce/";
+        const trackUrl = site.replace(/\/?$/, "/") + "track-order.html?order_id=" + encodeURIComponent(id);
+
+        return (
+            "🙏 *PRADEX Order Update*\n" +
+            "━━━━━━━━━━━━━━━━\n" +
+            "Hi *" + name + "*,\n\n" +
+            "Your order status has been updated.\n\n" +
+            "📦 *Order ID:* " + id + "\n" +
+            "📌 *Status:* " + status + "\n" +
+            "💳 *Payment:* " + method + " (" + pay + ")\n" +
+            "💰 *Amount:* " + total + "\n" +
+            "🧾 *Items:* " + products +
+            track + "\n\n" +
+            "🔗 Track your order:\n" + trackUrl + "\n\n" +
+            "Thank you for shopping with *PRADEX*!\n" +
+            "_Build. Experiment. Innovate._\n" +
+            "━━━━━━━━━━━━━━━━\n" +
+            "Need help? Just reply to this message."
+        );
+    },
+
+    lowStock(items) {
+        const list = items || [];
+        const lines = list.slice(0, 15).map(p =>
+            "• " + (p.name || "Item") + " — *" + (p.stock ?? 0) + "* left (min " + (p.minimum_stock || 5) + ")"
+        );
+        let msg =
+            "⚠️ *PRADEX Low Stock Alert*\n" +
+            "━━━━━━━━━━━━━━━━\n" +
+            "*" + list.length + "* product(s) need reorder:\n\n" +
+            lines.join("\n");
+        if (list.length > 15) msg += "\n… +" + (list.length - 15) + " more";
+        msg += "\n\n📋 Open *Purchasing* in Admin to create PO.\n" +
+            "_Automated stock reminder_";
+        return msg;
+    },
+
+    customerHelp(orderId) {
+        return (
+            "👋 *Hi PRADEX Support!*\n\n" +
+            "I need help with my order.\n" +
+            "📦 *Order ID:* " + (orderId || "—") + "\n\n" +
+            "Please assist. Thank you!"
+        );
+    },
+
+    open(phone, text) {
+        let p = String(phone || "").replace(/\D/g, "");
+        if (p.length === 10) p = "91" + p;
+        if (!p) return false;
+        window.open("https://wa.me/" + p + "?text=" + encodeURIComponent(text || ""), "_blank");
+        return true;
+    }
+};
