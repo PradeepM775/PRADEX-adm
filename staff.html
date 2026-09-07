@@ -212,15 +212,19 @@
             document.getElementById("can_delete").checked = !!s.can_delete;
         }
 
-        function removeStaff(id) {
+        async function removeStaff(id) {
             if (!confirm("Remove this staff account?")) return;
-            StaffStore.remove(id);
-            StaffStore.log("staff_remove", "Removed " + id, sess);
-            Utils.toast("Staff removed", "success");
-            renderStaff();
+            const res = await StaffStore.remove(id);
+            if (!res.success) {
+                Utils.toast(res.message || "Failed", "error");
+                return;
+            }
+            await StaffStore.log("staff_remove", "Removed " + id, sess);
+            Utils.toast("Staff removed from Google Sheet", "success");
+            await loadAll();
         }
 
-        document.getElementById("staffForm").addEventListener("submit", (e) => {
+        document.getElementById("staffForm").addEventListener("submit", async (e) => {
             e.preventDefault();
             const payload = {
                 staff_id: document.getElementById("staff_id").value || undefined,
@@ -232,36 +236,46 @@
                 active: document.getElementById("active").checked,
                 can_delete: document.getElementById("can_delete").checked
             };
-            const res = StaffStore.upsert(payload);
+            const btn = e.target.querySelector("button[type=submit]");
+            if (btn) { btn.disabled = true; btn.textContent = "Saving..."; }
+            const res = await StaffStore.save(payload);
             if (!res.success) {
                 Utils.toast(res.message || "Failed", "error");
+                if (btn) { btn.disabled = false; btn.textContent = "Save staff"; }
                 return;
             }
-            StaffStore.log("staff_save", payload.username + " · " + payload.role, sess);
-            Utils.toast("Staff saved", "success");
+            await StaffStore.log("staff_save", payload.username + " · " + payload.role, sess);
+            Utils.toast("Staff saved to Google Sheet", "success");
             closeForm();
-            renderStaff();
-            renderLogs();
+            await loadAll();
+            if (btn) { btn.disabled = false; btn.textContent = "Save staff"; }
         });
 
-        function renderLogs() {
-            const logins = StaffStore.getLogins().slice(0, 20);
+        async function loadAll() {
+            await StaffStore.fetchAll();
+            renderStaff();
+            const logins = await StaffStore.fetchLogins(30);
+            const acts = await StaffStore.fetchLogs(40);
+            renderLogs(logins, acts);
+        }
+
+        function renderLogs(logins, acts) {
+            logins = logins || StaffStore.getLogins().slice(0, 20);
+            acts = acts || StaffStore.getLogs().slice(0, 30);
             document.getElementById("loginBody").innerHTML = logins.length ? logins.map(l =>
-                '<tr><td style="font-size:0.78rem;white-space:nowrap">' + new Date(l.at).toLocaleString("en-IN") + '</td>' +
+                '<tr><td style="font-size:0.78rem;white-space:nowrap">' + new Date(l.at || Date.now()).toLocaleString("en-IN") + '</td>' +
                 '<td>' + esc(l.name || l.username) + '</td><td>' + esc(l.role || "—") + '</td>' +
-                '<td>' + (l.success ? '<span class="status-pill in">OK</span>' : '<span class="status-pill out">Fail</span>') + '</td></tr>'
+                '<td>' + (l.success === true || l.success === "TRUE" || l.success === true ? '<span class="status-pill in">OK</span>' : '<span class="status-pill out">Fail</span>') + '</td></tr>'
             ).join("") : '<tr><td colspan="4" style="color:var(--text-muted)">No logins yet</td></tr>';
 
-            const acts = StaffStore.getLogs().slice(0, 30);
             document.getElementById("actBody").innerHTML = acts.length ? acts.map(a =>
-                '<tr><td style="font-size:0.78rem;white-space:nowrap">' + new Date(a.at).toLocaleString("en-IN") + '</td>' +
+                '<tr><td style="font-size:0.78rem;white-space:nowrap">' + new Date(a.at || Date.now()).toLocaleString("en-IN") + '</td>' +
                 '<td>' + esc(a.staff) + '</td><td>' + esc(a.action) + '</td>' +
                 '<td style="font-size:0.8rem;color:var(--text-muted)">' + esc(a.details) + '</td></tr>'
             ).join("") : '<tr><td colspan="4" style="color:var(--text-muted)">No activity yet</td></tr>';
         }
 
-        renderStaff();
-        renderLogs();
+        loadAll();
     </script>
 </body>
 </html>

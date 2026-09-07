@@ -1,11 +1,11 @@
 /**
- * Staff roles, permissions, activity + login logs (LocalStorage)
- * Super Admin manages staff. Delete default OFF for non-super unless can_delete.
+ * Staff roles, permissions — data from Google Sheets via Apps Script
+ * LocalStorage only as offline cache fallback
  */
 const StaffStore = {
-    STAFF_KEY: "ptv_admin_staff",
-    LOG_KEY: "ptv_admin_activity",
-    LOGIN_KEY: "ptv_admin_logins",
+    STAFF_KEY: "ptv_admin_staff_cache",
+    LOG_KEY: "ptv_admin_activity_cache",
+    LOGIN_KEY: "ptv_admin_logins_cache",
 
     ROLES: {
         super_admin: {
@@ -34,77 +34,81 @@ const StaffStore = {
         }
     },
 
-    all() {
+    _cacheStaff(list) {
+        try { localStorage.setItem(this.STAFF_KEY, JSON.stringify(list || [])); } catch (e) {}
+    },
+    _readCacheStaff() {
         try {
             const list = JSON.parse(localStorage.getItem(this.STAFF_KEY) || "[]");
             return Array.isArray(list) ? list : [];
         } catch { return []; }
     },
 
-    saveAll(list) {
-        localStorage.setItem(this.STAFF_KEY, JSON.stringify(list));
+    async fetchAll() {
+        try {
+            if (typeof API !== "undefined" && API.adminListStaff) {
+                const res = await API.adminListStaff();
+                if (res && res.success && Array.isArray(res.data)) {
+                    this._cacheStaff(res.data);
+                    return res.data;
+                }
+            }
+        } catch (e) {}
+        return this._readCacheStaff();
     },
 
-    getByUsername(username) {
-        const u = String(username || "").trim().toLowerCase();
-        return this.all().find(s => String(s.username || "").toLowerCase() === u) || null;
+    all() {
+        return this._readCacheStaff();
     },
 
-    upsert(staff) {
-        const list = this.all();
-        const id = staff.staff_id || ("STF-" + Date.now());
-        const idx = list.findIndex(s => s.staff_id === id || String(s.username).toLowerCase() === String(staff.username || "").toLowerCase());
-        const row = {
-            staff_id: id,
+    async save(staff) {
+        const payload = {
+            staff_id: staff.staff_id || "",
             name: String(staff.name || "").trim(),
             email: String(staff.email || "").trim(),
             username: String(staff.username || "").trim(),
             password: String(staff.password || "").trim(),
             role: staff.role || "orders",
             active: staff.active !== false,
-            can_delete: !!staff.can_delete,
-            created_at: staff.created_at || new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            last_login: staff.last_login || ""
+            can_delete: !!staff.can_delete
         };
-        if (!row.username || !row.password) return { success: false, message: "Username and password required" };
-        if (!this.ROLES[row.role]) return { success: false, message: "Invalid role" };
-        if (idx >= 0) {
-            // keep password if left blank on edit
-            if (!staff.password) row.password = list[idx].password;
-            row.created_at = list[idx].created_at;
-            list[idx] = row;
-        } else {
-            if (this.getByUsername(row.username)) return { success: false, message: "Username already exists" };
-            list.push(row);
+        if (!payload.username) return { success: false, message: "Username required" };
+        if (!this.ROLES[payload.role]) return { success: false, message: "Invalid role" };
+
+        try {
+            if (typeof API !== "undefined" && API.adminSaveStaff) {
+                const res = await API.adminSaveStaff(payload);
+                if (res && res.success) {
+                    await this.fetchAll();
+                    return res;
+                }
+                if (res && !res.success) return res;
+            }
+        } catch (e) {
+            return { success: false, message: e.message || "Network error" };
         }
-        this.saveAll(list);
-        return { success: true, data: row };
+        return { success: false, message: "Could not save staff to server" };
     },
 
-    remove(staffId) {
-        const list = this.all().filter(s => s.staff_id !== staffId);
-        this.saveAll(list);
-        return { success: true };
+    // legacy name used by staff.html
+    upsert(staff) {
+        return this.save(staff);
     },
 
-    setLastLogin(username) {
-        const list = this.all();
-        const u = String(username || "").toLowerCase();
-        const s = list.find(x => String(x.username).toLowerCase() === u);
-        if (s) {
-            s.last_login = new Date().toISOString();
-            this.saveAll(list);
+    async remove(staffId) {
+        try {
+            if (typeof API !== "undefined" && API.adminDeleteStaff) {
+                const res = await API.adminDeleteStaff(staffId);
+                if (res && res.success) {
+                    await this.fetchAll();
+                    return res;
+                }
+                return res || { success: false, message: "Delete failed" };
+            }
+        } catch (e) {
+            return { success: false, message: e.message || "Network error" };
         }
-    },
-
-    /** Validate staff credentials (not super-admin bootstrap) */
-    authenticate(username, password) {
-        const s = this.getByUsername(username);
-        if (!s) return null;
-        if (s.active === false) return { error: "Account disabled" };
-        if (String(s.password) !== String(password)) return null;
-        return s;
+        return { success: false, message: "Could not delete staff" };
     },
 
     roleMeta(role) {
@@ -116,8 +120,7 @@ const StaffStore = {
         const role = session.role || "super_admin";
         if (role === "super_admin") return true;
         const meta = this.roleMeta(role);
-        const p = (page || "").toLowerCase();
-        return (meta.pages || []).includes(p);
+        return (meta.pages || []).includes((page || "").toLowerCase());
     },
 
     canDelete(session) {
@@ -131,21 +134,24 @@ const StaffStore = {
         return session.role === "super_admin" || !!session.can_manage_staff;
     },
 
-    // ----- Activity log -----
-    log(action, details, session) {
+    async log(action, details, session) {
+        const sess = session || (typeof Auth !== "undefined" ? Auth.getAdminSession() : null) || {};
+        const payload = {
+            staff: sess.name || sess.username || "admin",
+            role: sess.role || "super_admin",
+            action: String(action || "").slice(0, 80),
+            details: String(details || "").slice(0, 240)
+        };
         try {
-            const sess = session || (typeof Auth !== "undefined" ? Auth.getAdminSession() : null) || {};
-            const entry = {
-                id: "LOG-" + Date.now(),
-                at: new Date().toISOString(),
-                staff: sess.name || sess.username || "admin",
-                role: sess.role || "super_admin",
-                action: String(action || "").slice(0, 80),
-                details: String(details || "").slice(0, 240)
-            };
+            if (typeof API !== "undefined" && API.adminLogActivity) {
+                await API.adminLogActivity(payload);
+            }
+        } catch (e) {}
+        // cache append
+        try {
             const list = this.getLogs();
-            list.unshift(entry);
-            localStorage.setItem(this.LOG_KEY, JSON.stringify(list.slice(0, 250)));
+            list.unshift({ id: "LOG-" + Date.now(), at: new Date().toISOString(), ...payload });
+            localStorage.setItem(this.LOG_KEY, JSON.stringify(list.slice(0, 100)));
         } catch (e) {}
     },
 
@@ -156,22 +162,17 @@ const StaffStore = {
         } catch { return []; }
     },
 
-    // ----- Login history -----
-    logLogin(username, ok, meta) {
+    async fetchLogs(limit) {
         try {
-            const entry = {
-                id: "LIN-" + Date.now(),
-                at: new Date().toISOString(),
-                username: String(username || ""),
-                success: !!ok,
-                role: (meta && meta.role) || "",
-                name: (meta && meta.name) || "",
-                note: (meta && meta.note) || ""
-            };
-            const list = this.getLogins();
-            list.unshift(entry);
-            localStorage.setItem(this.LOGIN_KEY, JSON.stringify(list.slice(0, 150)));
+            if (typeof API !== "undefined" && API.adminListActivity) {
+                const res = await API.adminListActivity(limit || 50);
+                if (res && res.success && Array.isArray(res.data)) {
+                    localStorage.setItem(this.LOG_KEY, JSON.stringify(res.data.slice(0, 100)));
+                    return res.data;
+                }
+            }
         } catch (e) {}
+        return this.getLogs();
     },
 
     getLogins() {
@@ -179,15 +180,31 @@ const StaffStore = {
             const list = JSON.parse(localStorage.getItem(this.LOGIN_KEY) || "[]");
             return Array.isArray(list) ? list : [];
         } catch { return []; }
-    }
+    },
+
+    async fetchLogins(limit) {
+        try {
+            if (typeof API !== "undefined" && API.adminListLogins) {
+                const res = await API.adminListLogins(limit || 50);
+                if (res && res.success && Array.isArray(res.data)) {
+                    localStorage.setItem(this.LOGIN_KEY, JSON.stringify(res.data.slice(0, 100)));
+                    return res.data;
+                }
+            }
+        } catch (e) {}
+        return this.getLogins();
+    },
+
+    // client-side authenticate removed — login goes through GAS adminLogin
+    authenticate() { return null; },
+    setLastLogin() {},
+    logLogin() {}
 };
 
-/** Guard current admin page – call after Auth check */
 function enforceStaffPageAccess() {
     if (typeof Auth === "undefined" || !Auth.isAdminLoggedIn()) return;
     const session = Auth.getAdminSession();
     const page = (location.pathname.split("/").pop() || "dashboard.html").toLowerCase();
-    // staff.html only super admin
     if (page === "staff.html" && !StaffStore.canManageStaff(session)) {
         alert("Access denied — Super Admin only");
         location.href = "dashboard.html";
@@ -199,7 +216,6 @@ function enforceStaffPageAccess() {
     }
 }
 
-/** Hide nav links staff cannot open */
 function filterAdminNavByRole() {
     if (typeof Auth === "undefined") return;
     const session = Auth.getAdminSession();
@@ -207,12 +223,11 @@ function filterAdminNavByRole() {
     document.querySelectorAll(".admin-nav a[href]").forEach(a => {
         const href = (a.getAttribute("href") || "").toLowerCase();
         if (!href || href === "#") return;
-        if (!StaffStore.canAccessPage(session, href)) {
-            a.style.display = "none";
+        if (href === "staff.html") {
+            a.style.display = StaffStore.canManageStaff(session) ? "" : "none";
+            return;
         }
-    });
-    // Staff link: show only for super admin
-    document.querySelectorAll(".admin-nav a[href='staff.html']").forEach(a => {
-        a.style.display = StaffStore.canManageStaff(session) ? "" : "none";
+        if (!StaffStore.canAccessPage(session, href)) a.style.display = "none";
+        else a.style.display = "";
     });
 }

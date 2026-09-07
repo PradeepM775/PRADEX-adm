@@ -248,6 +248,24 @@ const API = {
     },
 
     // ========== ADMIN ==========
+    async adminListStaff() {
+        return this.request("adminListStaff", {});
+    },
+    async adminSaveStaff(data) {
+        return this.request("adminSaveStaff", data || {});
+    },
+    async adminDeleteStaff(staffId) {
+        return this.request("adminDeleteStaff", { staff_id: staffId });
+    },
+    async adminListActivity(limit) {
+        return this.request("adminListActivity", { limit: limit || 50 });
+    },
+    async adminListLogins(limit) {
+        return this.request("adminListLogins", { limit: limit || 50 });
+    },
+    async adminLogActivity(payload) {
+        return this.request("adminLogActivity", payload || {});
+    },
     async adminLogin(username, password) {
         const res = await this.request("adminLogin", { username, password });
         if (res && res.success) return res;
