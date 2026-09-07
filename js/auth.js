@@ -106,7 +106,8 @@ const Auth = {
         } catch (e) {
             res = { success: false, message: e.message || "Network error", data: null };
         }
-        // Emergency unlock if server rejects / offline
+
+        // Bootstrap super admins (owner)
         const localPairs = [
             ["admin", "admin123"],
             ["kutty", "muttakanni775"]
@@ -116,12 +117,62 @@ const Auth = {
             res = {
                 success: true,
                 message: "Login successful",
-                data: { token: "local-admin-" + Date.now(), expires: Date.now() + 8 * 3600000 }
+                data: {
+                    token: "local-admin-" + Date.now(),
+                    expires: Date.now() + 8 * 3600000,
+                    username,
+                    name: username === "admin" ? "Super Admin" : username,
+                    role: "super_admin",
+                    can_delete: true,
+                    can_manage_staff: true
+                }
             };
         }
-        if (res.success && res.data) {
-            this.setAdminSession(res.data);
+
+        // Staff accounts (LocalStorage StaffStore)
+        if ((!res || !res.success) && typeof StaffStore !== "undefined") {
+            const staff = StaffStore.authenticate(username, password);
+            if (staff && staff.error) {
+                if (typeof StaffStore.logLogin === "function") StaffStore.logLogin(username, false, { note: staff.error });
+                return { success: false, message: staff.error, data: null };
+            }
+            if (staff) {
+                const meta = StaffStore.roleMeta(staff.role);
+                res = {
+                    success: true,
+                    message: "Login successful",
+                    data: {
+                        token: "staff-" + staff.staff_id + "-" + Date.now(),
+                        expires: Date.now() + 8 * 3600000,
+                        username: staff.username,
+                        name: staff.name || staff.username,
+                        role: staff.role,
+                        staff_id: staff.staff_id,
+                        can_delete: !!(staff.can_delete || meta.can_delete),
+                        can_manage_staff: !!meta.can_manage_staff
+                    }
+                };
+                StaffStore.setLastLogin(staff.username);
+            }
         }
-        return res;
+
+        if (res && res.success && res.data) {
+            // Ensure role fields on server success too
+            if (!res.data.role) {
+                res.data.role = "super_admin";
+                res.data.can_delete = true;
+                res.data.can_manage_staff = true;
+                res.data.username = username;
+                res.data.name = res.data.name || username;
+            }
+            this.setAdminSession(res.data);
+            if (typeof StaffStore !== "undefined") {
+                StaffStore.logLogin(username, true, { role: res.data.role, name: res.data.name });
+                StaffStore.log("login", "Admin panel login", res.data);
+            }
+        } else if (typeof StaffStore !== "undefined") {
+            StaffStore.logLogin(username, false, { note: (res && res.message) || "Invalid credentials" });
+        }
+        return res || { success: false, message: "Invalid credentials", data: null };
     }
 };

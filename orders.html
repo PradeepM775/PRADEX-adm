@@ -37,6 +37,7 @@
             <a href="coupons.html"><span class="nav-icon">🎟</span> Coupons</a>
             <a href="reports.html"><span class="nav-icon">📈</span> Reports</a>
             <a href="finance.html"><span class="nav-icon">💳</span> Finance</a>
+                        <a href="staff.html"><span class="nav-icon">👥</span> Staff</a>
             <a href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
             <a href="#" onclick="Auth.adminLogout();location.href='login.html'"><span class="nav-icon">🚪</span> Logout</a>
         </nav>
@@ -48,6 +49,14 @@
             <button class="btn btn-outline btn-sm" onclick="exportCSV()">Export CSV</button>
         </div>
         <div class="admin-content">
+            <div class="page-header">
+                <div>
+                    <div class="breadcrumb-mini">Home › Orders</div>
+                    <h1>Orders</h1>
+                    <p>Track, update status and manage customer orders.</p>
+                </div>
+            </div>
+            <div class="panel">
             <div class="bulk-bar" id="bulkBar">
                 <span id="selCount">0 selected</span>
                 <select id="bulkStatus" class="form-control" style="max-width:160px;padding:0.35rem">
@@ -70,10 +79,13 @@
                 </table>
             </div>
         </div>
+            </div>
+        </div>
     </div>
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/staff.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/admin-common.js"></script>
     <script>
@@ -162,7 +174,7 @@
         }
 
         async function deleteOne(id) {
-            if (!confirm("Delete order " + id + "?\n\nTip: Export CSV first for monthly backup.")) return;
+            if (!requireDeletePermission("Delete") || !confirm("Delete order " + id + "?\n\nTip: Export CSV first for monthly backup.")) return;
             const res = await API.adminDeleteOrder(id);
             try {
                 let local = JSON.parse(localStorage.getItem("ptv_demo_orders") || "[]");

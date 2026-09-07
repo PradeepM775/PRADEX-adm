@@ -32,20 +32,33 @@
             <a href="coupons.html"><span class="nav-icon">🎟</span> Coupons</a>
             <a href="reports.html"><span class="nav-icon">📈</span> Reports</a>
             <a href="finance.html"><span class="nav-icon">💳</span> Finance</a>
+                        <a href="staff.html"><span class="nav-icon">👥</span> Staff</a>
             <a href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
             <a href="#" onclick="Auth.adminLogout();location.href='login.html'"><span class="nav-icon">🚪</span> Logout</a>
         </nav>
     </aside>
     <div class="admin-main">
         <div class="admin-topbar">
-            <button class="admin-sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
-            <h2 style="font-size:1.1rem">Manage Products</h2>
-            <a href="add-product.html" class="btn btn-primary btn-sm">+ Add Product</a>
+            <button class="admin-sidebar-toggle" type="button" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+            <div class="admin-search"><input type="search" placeholder="Search products, orders..." onkeydown="if(event.key==='Enter')document.getElementById('search').value=this.value"></div>
+            <div class="admin-topbar-right">
+                <div class="admin-avatar">P</div>
+                <div class="admin-user-meta"><strong>Admin</strong><span>PRADEX</span></div>
+            </div>
         </div>
         <div class="admin-content">
-            <div class="filters-bar" style="margin-bottom:1rem;display:flex;gap:0.75rem;flex-wrap:wrap">
-                <input type="search" id="search" placeholder="Search name / ID..." class="form-control" style="max-width:240px">
-                <select id="filterStatus" class="form-control" style="max-width:140px">
+            <div class="page-header">
+                <div>
+                    <div class="breadcrumb-mini">Home › Products</div>
+                    <h1>Products</h1>
+                    <p>Manage catalog, pricing and visibility.</p>
+                </div>
+                <a href="add-product.html" class="btn btn-primary">+ Add Product</a>
+            </div>
+            <div class="panel">
+            <div class="inv-toolbar">
+                <input type="search" id="search" placeholder="Search name / ID..." class="form-control search-wide">
+                <select id="filterStatus" class="form-control">
                     <option value="">All Status</option>
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
@@ -68,11 +81,13 @@
                     <tbody id="tbody"></tbody>
                 </table>
             </div>
+            </div>
         </div>
     </div>
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/staff.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/admin-common.js"></script>
     <script>
@@ -127,7 +142,7 @@
         }
 
         async function deleteProduct(id, name) {
-            if (!confirm("Delete \"" + name + "\" permanently?\nThis cannot be undone.")) return;
+            if (!requireDeletePermission("Delete") || !confirm("Delete \"" + name + "\" permanently?\nThis cannot be undone.")) return;
             const res = await API.adminDeleteProduct(String(id));
             try {
                 let list = JSON.parse(localStorage.getItem("ptv_products") || "[]");

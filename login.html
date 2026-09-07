@@ -3,60 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <link rel="icon" href="images/favicon.ico" sizes="any">
-    <link rel="icon" type="image/png" href="images/favicon-32.png" sizes="32x32">
-    <link rel="apple-touch-icon" href="images/favicon-180.png">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login – Pradeep Tech Verse</title>
+    <title>Admin Login – PRADEX</title>
     <link rel="stylesheet" href="css/admin.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="auth-page">
         <div class="auth-card">
-            <div style="text-align:center;margin-bottom:1.5rem">
-                <span class="logo-icon" style="display:inline-flex;margin-bottom:0.75rem">PT</span>
-                <h1>Admin Login</h1>
-                <p class="subtitle">Pradeep Tech Verse Dashboard</p>
+            <div style="text-align:center;margin-bottom:1.25rem">
+                <span class="logo-icon">P</span>
+                <h1 style="margin-top:0.75rem">PRADEX Admin</h1>
+                <p class="subtitle" style="margin-bottom:0">Sign in to manage your store</p>
             </div>
             <form id="adminLoginForm">
                 <div class="form-group">
                     <label>Username</label>
-                    <input type="text" name="username" class="form-control" required autocomplete="username">
+                    <input type="text" name="username" class="form-control" required autocomplete="username" placeholder="admin">
                 </div>
                 <div class="form-group">
                     <label>Password</label>
-                    <input type="password" name="password" class="form-control" required autocomplete="current-password">
+                    <input type="password" name="password" class="form-control" required autocomplete="current-password" placeholder="••••••••">
                 </div>
-                <button type="submit" class="btn btn-primary btn-block">Login</button>
+                <button type="submit" class="btn btn-primary btn-block">Sign in</button>
             </form>
-            <p style="text-align:center;margin-top:1.5rem;font-size:0.8rem;color:var(--text-dim)">
-                Use your admin username & password
+            <p style="text-align:center;margin-top:1.25rem;font-size:0.78rem;color:var(--text-dim)">
+                Authorized staff only · PRADEX
             </p>
-            <p style="text-align:center;margin-top:0.5rem"><a href="../index.html">← Back to store</a></p>
         </div>
     </div>
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/staff.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/utils.js"></script>
-    <script src="js/admin-common.js"></script>
     <script>
-        if (Auth.isAdminLoggedIn()) window.location.href = "dashboard.html";
-
+        if (Auth.isAdminLoggedIn()) location.href = "dashboard.html";
         document.getElementById("adminLoginForm").addEventListener("submit", async (e) => {
             e.preventDefault();
             const fd = new FormData(e.target);
-            const btn = e.target.querySelector("button");
+            const btn = e.target.querySelector("button[type=submit]");
             btn.disabled = true;
-            btn.textContent = "Logging in...";
+            btn.textContent = "Signing in...";
             const res = await Auth.adminLogin(String(fd.get("username")||"").trim(), String(fd.get("password")||"").trim());
             if (res.success) {
-                window.location.href = "dashboard.html";
+                location.href = "dashboard.html";
             } else {
-                Utils.toast(res.message || "Invalid credentials", "error");
+                if (typeof Utils !== "undefined") Utils.toast(res.message || "Invalid credentials", "error");
+                else alert(res.message || "Invalid credentials");
                 btn.disabled = false;
-                btn.textContent = "Login";
+                btn.textContent = "Sign in";
             }
         });
     </script>

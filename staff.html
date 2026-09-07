@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="images/favicon.ico" sizes="any">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff – PRADEX Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="logo">
+            <span class="logo-icon">P</span>
+            <div>
+                <span>PRADEX Admin</span>
+                <span class="logo-sub">Team &amp; access</span>
+            </div>
+        </div>
+        <nav class="admin-nav">
+            <a href="dashboard.html"><span class="nav-icon">⌂</span> Dashboard</a>
+            <a href="products.html"><span class="nav-icon">▣</span> Products</a>
+            <a href="inventory.html"><span class="nav-icon">▦</span> Inventory</a>
+            <a href="orders.html"><span class="nav-icon">🛒</span> Orders</a>
+            <a href="purchasing.html"><span class="nav-icon">🧾</span> Purchasing</a>
+            <a href="customers.html"><span class="nav-icon">👤</span> Customers</a>
+            <a href="categories.html"><span class="nav-icon">🏷</span> Categories</a>
+            <a href="coupons.html"><span class="nav-icon">🎟</span> Coupons</a>
+            <a href="reports.html"><span class="nav-icon">◉</span> Reports</a>
+            <a href="finance.html"><span class="nav-icon">💳</span> Finance</a>
+            <a href="settings.html"><span class="nav-icon">⚙</span> Settings</a>
+            <a href="staff.html" class="active"><span class="nav-icon">👥</span> Staff</a>
+            <a href="add-product.html"><span class="nav-icon">＋</span> Add Product</a>
+            <a href="#" onclick="adminLogout()"><span class="nav-icon">→</span> Logout</a>
+        </nav>
+    </aside>
+
+    <div class="admin-main">
+        <div class="admin-topbar">
+            <button class="admin-sidebar-toggle" type="button" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+            <h2 style="margin:0;font-size:1rem;color:var(--text-muted)">Staff &amp; Activity</h2>
+            <div class="admin-topbar-right">
+                <div class="admin-avatar">P</div>
+                <div class="admin-user-meta"><strong id="whoName">Admin</strong><span id="whoRole">Super Admin</span></div>
+            </div>
+        </div>
+
+        <div class="admin-content">
+            <div class="page-header">
+                <div>
+                    <h1>Staff</h1>
+                    <p>Hire helpers, set roles, control delete access. Login and activity history below.</p>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="openForm()">+ Add staff</button>
+            </div>
+
+            <div class="panel" style="margin-bottom:1.25rem">
+                <div class="panel-h"><h3>Team members</h3></div>
+                <div class="admin-table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th><th>Username</th><th>Role</th><th>Delete?</th>
+                                <th>Status</th><th>Last login</th><th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staffBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="panel" id="staffFormPanel" style="display:none;margin-bottom:1.25rem">
+                <div class="panel-h"><h3 id="formTitle">Add staff</h3></div>
+                <div class="panel-b">
+                    <form id="staffForm">
+                        <input type="hidden" id="staff_id">
+                        <div class="form-row">
+                            <div class="form-group"><label>Full name</label><input class="form-control" id="name" required></div>
+                            <div class="form-group"><label>Email</label><input type="email" class="form-control" id="email"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Username *</label><input class="form-control" id="username" required autocomplete="off"></div>
+                            <div class="form-group"><label>Password *</label><input type="text" class="form-control" id="password" required autocomplete="new-password" placeholder="Set login password"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Role *</label>
+                                <select class="form-control" id="role">
+                                    <option value="orders">Orders — status, tracking, customers</option>
+                                    <option value="inventory">Inventory — stock, products, purchasing</option>
+                                    <option value="support">Support — orders view, customers</option>
+                                    <option value="super_admin">Super Admin — full access</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label style="display:flex;align-items:center;gap:0.5rem;margin-top:1.6rem">
+                                    <input type="checkbox" id="active" checked> Active
+                                </label>
+                                <label style="display:flex;align-items:center;gap:0.5rem;margin-top:0.5rem">
+                                    <input type="checkbox" id="can_delete"> Allow delete (orders/products)
+                                </label>
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+                            <button type="submit" class="btn btn-primary">Save staff</button>
+                            <button type="button" class="btn btn-outline" onclick="closeForm()">Cancel</button>
+                        </div>
+                        <p style="font-size:0.8rem;color:var(--text-muted);margin:0.75rem 0 0">
+                            Default: delete OFF. Finance and Settings = Super Admin only.
+                        </p>
+                    </form>
+                </div>
+            </div>
+
+            <div class="stats-grid" style="grid-template-columns:1fr 1fr;margin-bottom:1.25rem">
+                <div class="panel">
+                    <div class="panel-h"><h3>Login history</h3></div>
+                    <div class="admin-table-wrap">
+                        <table class="admin-table">
+                            <thead><tr><th>Time</th><th>User</th><th>Role</th><th>Result</th></tr></thead>
+                            <tbody id="loginBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-h"><h3>Activity log</h3></div>
+                    <div class="admin-table-wrap">
+                        <table class="admin-table">
+                            <thead><tr><th>Time</th><th>Staff</th><th>Action</th><th>Details</th></tr></thead>
+                            <tbody id="actBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/staff.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/admin-common.js"></script>
+    <script>
+        if (!Auth.isAdminLoggedIn()) location.href = "login.html";
+        const sess = Auth.getAdminSession();
+        if (!StaffStore.canManageStaff(sess)) {
+            alert("Super Admin only");
+            location.href = "dashboard.html";
+        }
+        document.getElementById("whoName").textContent = sess.name || sess.username || "Admin";
+        document.getElementById("whoRole").textContent = (StaffStore.roleMeta(sess.role).label) || sess.role;
+
+        function openForm(edit) {
+            document.getElementById("staffFormPanel").style.display = "block";
+            document.getElementById("formTitle").textContent = edit ? "Edit staff" : "Add staff";
+            if (!edit) {
+                document.getElementById("staffForm").reset();
+                document.getElementById("staff_id").value = "";
+                document.getElementById("active").checked = true;
+                document.getElementById("can_delete").checked = false;
+                document.getElementById("password").required = true;
+                document.getElementById("password").placeholder = "Set login password";
+            }
+            document.getElementById("staffFormPanel").scrollIntoView({ behavior: "smooth" });
+        }
+        function closeForm() {
+            document.getElementById("staffFormPanel").style.display = "none";
+        }
+
+        function esc(s) {
+            return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+        }
+
+        function renderStaff() {
+            const list = StaffStore.all();
+            const body = document.getElementById("staffBody");
+            if (!list.length) {
+                body.innerHTML = '<tr><td colspan="7" style="color:var(--text-muted);text-align:center;padding:1.5rem">No staff yet. Add your first helper.</td></tr>';
+                return;
+            }
+            body.innerHTML = list.map(s => {
+                const role = StaffStore.roleMeta(s.role).label;
+                const last = s.last_login ? new Date(s.last_login).toLocaleString("en-IN") : "—";
+                return '<tr>' +
+                    '<td><strong>' + esc(s.name) + '</strong><br><span style="font-size:0.75rem;color:var(--text-muted)">' + esc(s.email) + '</span></td>' +
+                    '<td>' + esc(s.username) + '</td>' +
+                    '<td>' + role + '</td>' +
+                    '<td>' + (s.can_delete || s.role === "super_admin" ? "Yes" : "No") + '</td>' +
+                    '<td>' + (s.active !== false ? '<span class="status-pill in">Active</span>' : '<span class="status-pill out">Off</span>') + '</td>' +
+                    '<td style="font-size:0.8rem;color:var(--text-muted)">' + last + '</td>' +
+                    '<td><button type="button" class="btn btn-outline btn-sm" data-edit="' + esc(s.staff_id) + '">Edit</button> ' +
+                    '<button type="button" class="btn btn-danger btn-sm" data-del="' + esc(s.staff_id) + '">Remove</button></td></tr>';
+            }).join("");
+            body.querySelectorAll("[data-edit]").forEach(btn => btn.onclick = () => editStaff(btn.getAttribute("data-edit")));
+            body.querySelectorAll("[data-del]").forEach(btn => btn.onclick = () => removeStaff(btn.getAttribute("data-del")));
+        }
+
+        function editStaff(id) {
+            const s = StaffStore.all().find(x => x.staff_id === id);
+            if (!s) return;
+            openForm(true);
+            document.getElementById("staff_id").value = s.staff_id;
+            document.getElementById("name").value = s.name || "";
+            document.getElementById("email").value = s.email || "";
+            document.getElementById("username").value = s.username || "";
+            document.getElementById("password").value = "";
+            document.getElementById("password").required = false;
+            document.getElementById("password").placeholder = "Leave blank to keep current";
+            document.getElementById("role").value = s.role || "orders";
+            document.getElementById("active").checked = s.active !== false;
+            document.getElementById("can_delete").checked = !!s.can_delete;
+        }
+
+        function removeStaff(id) {
+            if (!confirm("Remove this staff account?")) return;
+            StaffStore.remove(id);
+            StaffStore.log("staff_remove", "Removed " + id, sess);
+            Utils.toast("Staff removed", "success");
+            renderStaff();
+        }
+
+        document.getElementById("staffForm").addEventListener("submit", (e) => {
+            e.preventDefault();
+            const payload = {
+                staff_id: document.getElementById("staff_id").value || undefined,
+                name: document.getElementById("name").value.trim(),
+                email: document.getElementById("email").value.trim(),
+                username: document.getElementById("username").value.trim(),
+                password: document.getElementById("password").value,
+                role: document.getElementById("role").value,
+                active: document.getElementById("active").checked,
+                can_delete: document.getElementById("can_delete").checked
+            };
+            const res = StaffStore.upsert(payload);
+            if (!res.success) {
+                Utils.toast(res.message || "Failed", "error");
+                return;
+            }
+            StaffStore.log("staff_save", payload.username + " · " + payload.role, sess);
+            Utils.toast("Staff saved", "success");
+            closeForm();
+            renderStaff();
+            renderLogs();
+        });
+
+        function renderLogs() {
+            const logins = StaffStore.getLogins().slice(0, 20);
+            document.getElementById("loginBody").innerHTML = logins.length ? logins.map(l =>
+                '<tr><td style="font-size:0.78rem;white-space:nowrap">' + new Date(l.at).toLocaleString("en-IN") + '</td>' +
+                '<td>' + esc(l.name || l.username) + '</td><td>' + esc(l.role || "—") + '</td>' +
+                '<td>' + (l.success ? '<span class="status-pill in">OK</span>' : '<span class="status-pill out">Fail</span>') + '</td></tr>'
+            ).join("") : '<tr><td colspan="4" style="color:var(--text-muted)">No logins yet</td></tr>';
+
+            const acts = StaffStore.getLogs().slice(0, 30);
+            document.getElementById("actBody").innerHTML = acts.length ? acts.map(a =>
+                '<tr><td style="font-size:0.78rem;white-space:nowrap">' + new Date(a.at).toLocaleString("en-IN") + '</td>' +
+                '<td>' + esc(a.staff) + '</td><td>' + esc(a.action) + '</td>' +
+                '<td style="font-size:0.8rem;color:var(--text-muted)">' + esc(a.details) + '</td></tr>'
+            ).join("") : '<tr><td colspan="4" style="color:var(--text-muted)">No activity yet</td></tr>';
+        }
+
+        renderStaff();
+        renderLogs();
+    </script>
+</body>
+</html>
