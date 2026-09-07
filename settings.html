@@ -13,7 +13,13 @@
 </head>
 <body class="admin-body">
     <aside class="admin-sidebar" id="sidebar">
-        <div class="logo"><span class="logo-icon">PT</span><span>Admin</span></div>
+        <div class="logo">
+            <span class="logo-icon">P</span>
+            <div>
+                <span>PRADEX Admin</span>
+                <span class="logo-sub">Build Today, Smarter Tomorrow</span>
+            </div>
+        </div>
         <nav class="admin-nav">
             <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
             <a href="products.html"><span class="nav-icon">📦</span> Products</a>
@@ -72,6 +78,30 @@
                     </label>
                 </div>
 
+                
+                <hr style="border-color:var(--border);margin:1.5rem 0">
+                <h3 style="margin-bottom:0.5rem;font-size:1rem">Store availability</h3>
+                <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 1rem">
+                    Unavailable ஆனா client-ல popup + banner வரும். Checkout block ஆகும். Track order / account work ஆகும்.
+                </p>
+                <div class="form-group">
+                    <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer">
+                        <input type="checkbox" id="storeOpen" checked>
+                        <span><strong>Store open</strong> — accepting orders</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>Unavailable title</label>
+                    <input name="unavailable_title" id="unavailable_title" class="form-control" placeholder="Currently unavailable">
+                </div>
+                <div class="form-group">
+                    <label>Unavailable message</label>
+                    <textarea name="unavailable_message" id="unavailable_message" class="form-control" rows="3" placeholder="We are not accepting new orders right now."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Until (optional text)</label>
+                    <input name="unavailable_until" id="unavailable_until" class="form-control" placeholder="e.g. Monday 10 AM / 15 Sep">
+                </div>
                 <hr style="border-color:var(--border);margin:1.5rem 0">
                 <div class="form-row">
                     <div class="form-group"><label>Shipping Fee (₹)</label><input name="shipping_fee" type="number" class="form-control"></div>
@@ -88,16 +118,28 @@
     <script src="js/admin-common.js"></script>
     <script>
         if (!Auth.isAdminLoggedIn()) location.href = "login.html";
-        const s = API.getStoreSettings();
-        const form = document.getElementById("settingsForm");
-        ["store_name","email","phone","address","ship_from_name","ship_from_phone","ship_from_address",
-         "otp_from_email","whatsapp_admin_number","shipping_fee","free_shipping_min"].forEach(k => {
-            if (form[k] && s[k] != null) form[k].value = s[k];
-        });
-        document.getElementById("waNotify").checked = s.whatsapp_notify_customer !== false;
+        async function loadSettings() {
+            let s = API.getStoreSettings();
+            try {
+                const pub = await API.getPublicConfig();
+                if (pub && pub.success && pub.data) s = { ...s, ...pub.data };
+            } catch (e) {}
+            const form = document.getElementById("settingsForm");
+            ["store_name","email","phone","address","ship_from_name","ship_from_phone","ship_from_address",
+             "otp_from_email","whatsapp_admin_number","shipping_fee","free_shipping_min",
+             "unavailable_title","unavailable_message","unavailable_until"].forEach(k => {
+                if (form[k] && s[k] != null) form[k].value = s[k];
+            });
+            const openEl = document.getElementById("storeOpen");
+            if (openEl) openEl.checked = s.store_open !== false;
+            const wa = document.getElementById("waNotify");
+            if (wa) wa.checked = s.whatsapp_notify_customer !== false;
+        }
+        loadSettings();
 
-        form.addEventListener("submit", (e) => {
+        document.getElementById("settingsForm").addEventListener("submit", async (e) => {
             e.preventDefault();
+            const form = e.target;
             const cur = API.getStoreSettings();
             const fd = new FormData(form);
             fd.forEach((v, k) => { cur[k] = v; });
@@ -105,8 +147,24 @@
             cur.free_shipping_min = Number(cur.free_shipping_min) || 999;
             cur.whatsapp_notify_customer = document.getElementById("waNotify").checked;
             cur.whatsapp = cur.whatsapp_admin_number || cur.whatsapp;
+            cur.store_open = document.getElementById("storeOpen").checked;
+            cur.unavailable_title = (document.getElementById("unavailable_title").value || "").trim();
+            cur.unavailable_message = (document.getElementById("unavailable_message").value || "").trim();
+            cur.unavailable_until = (document.getElementById("unavailable_until").value || "").trim();
             API.saveStoreSettings(cur);
-            Utils.toast("Settings saved", "success");
+            // Sync to Apps Script so client site sees it
+            try {
+                const res = await API.adminSaveStoreStatus({
+                    store_open: cur.store_open,
+                    unavailable_title: cur.unavailable_title,
+                    unavailable_message: cur.unavailable_message,
+                    unavailable_until: cur.unavailable_until
+                });
+                if (res && res.success) Utils.toast(cur.store_open ? "Store OPEN — orders on" : "Store UNAVAILABLE — client blocked", "success");
+                else Utils.toast("Saved locally. Deploy Apps Script for live client sync.", "info");
+            } catch (err) {
+                Utils.toast("Saved locally. Network/Apps Script sync failed.", "info");
+            }
         });
     </script>
 </body>

@@ -6,7 +6,7 @@ const CONFIG = {
     APP_NAME: "PRADEX",
     SITE_URL: "https://pradeepm775.github.io/pradex-ecommerce/",
     TAGLINE: "Build. Experiment. Innovate.",
-    APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbz7ei1DUTTisv7SoOpub9R9CeIFAXyGHJGAzuPO06OTWcEtXXuxTWjV8AVGw8xmACGLBA/exec", // Replace after deploying Apps Script
+    APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxcYiWHxY05WwYIiRXTtJX9r7IhcFIUDwPS1Uc2dN0TOyOEgJN7UdF3rE6rN-DKWdcR2Q/exec", // Replace after deploying Apps Script
     CURRENCY: "INR",
     CURRENCY_SYMBOL: "₹",
     DEMO_MODE: false, // Set to false for production

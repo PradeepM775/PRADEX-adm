@@ -5,45 +5,127 @@
     <link rel="icon" href="images/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" href="images/favicon-32.png" sizes="32x32">
     <link rel="apple-touch-icon" href="images/favicon-180.png">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventory – Admin</title>
+    <title>Inventory – PRADEX Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/admin.css">
 </head>
 <body class="admin-body">
     <aside class="admin-sidebar" id="sidebar">
-        <div class="logo"><span class="logo-icon">PT</span><span>Admin</span></div>
-        <nav class="admin-nav">
-            <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
-            <a href="products.html"><span class="nav-icon">📦</span> Products</a>
-            <a href="add-product.html"><span class="nav-icon">➕</span> Add Product</a>
-            <a href="orders.html"><span class="nav-icon">🛒</span> Orders</a>
-            <a href="inventory.html" class="active"><span class="nav-icon">📋</span> Inventory</a>
-            <a href="purchasing.html"><span class="nav-icon">🧾</span> Purchasing</a>
-            <a href="customers.html"><span class="nav-icon">👥</span> Customers</a>
-            <a href="categories.html"><span class="nav-icon">🏷️</span> Categories</a>
-            <a href="coupons.html"><span class="nav-icon">🎟</span> Coupons</a>
-            <a href="reports.html"><span class="nav-icon">📈</span> Reports</a>
-            <a href="finance.html"><span class="nav-icon">💳</span> Finance</a>
-            <a href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
-            <a href="#" onclick="Auth.adminLogout();location.href='login.html'"><span class="nav-icon">🚪</span> Logout</a>
-        </nav>
-    </aside>
-    <div class="admin-main">
-        <div class="admin-topbar">
-            <button class="admin-sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
-            <h2 style="font-size:1.1rem">Inventory</h2>
-        </div>
-        <div class="admin-content">
-            <div class="admin-table-wrap">
-                <table class="admin-table">
-                    <thead><tr><th>Product</th><th>Current Qty</th><th>Min Stock</th><th>Status</th><th>Update</th></tr></thead>
-                    <tbody id="tbody"></tbody>
-                </table>
+        <div class="logo">
+            <span class="logo-icon">P</span>
+            <div>
+                <span>PRADEX Admin</span>
+                <span class="logo-sub">Build Today, Smarter Tomorrow</span>
             </div>
         </div>
+        <nav class="admin-nav">
+            <a href="dashboard.html"><span class="nav-icon">⌂</span> Dashboard</a>
+            <a href="products.html"><span class="nav-icon">▣</span> Products</a>
+            <a href="add-product.html"><span class="nav-icon">＋</span> Add Product</a>
+            <a href="orders.html"><span class="nav-icon">🛒</span> Orders</a>
+            <a href="inventory.html" class="active"><span class="nav-icon">▦</span> Inventory</a>
+            <a href="purchasing.html"><span class="nav-icon">🧾</span> Purchasing</a>
+            <a href="customers.html"><span class="nav-icon">👤</span> Customers</a>
+            <a href="categories.html"><span class="nav-icon">🏷</span> Categories</a>
+            <a href="coupons.html"><span class="nav-icon">🎟</span> Coupons</a>
+            <a href="reports.html"><span class="nav-icon">◉</span> Reports</a>
+            <a href="finance.html"><span class="nav-icon">💳</span> Finance</a>
+            <a href="settings.html"><span class="nav-icon">⚙</span> Settings</a>
+            <a href="#" onclick="adminLogout()"><span class="nav-icon">→</span> Logout</a>
+        </nav>
+        <div class="admin-sidebar-footer">
+            <strong>Electronics for a Smarter Tomorrow</strong>
+            IoT · Boards · Kits
+        </div>
+    </aside>
+
+    <div class="admin-main">
+        <div class="admin-topbar">
+            <button class="admin-sidebar-toggle" type="button" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+            <div class="admin-search">
+                <input type="search" id="topSearch" placeholder="Search products, orders, customers..." onkeydown="if(event.key==='Enter'){document.getElementById('q').value=this.value;render();}">
+            </div>
+            <div class="admin-topbar-right">
+                <div class="admin-avatar">P</div>
+                <div class="admin-user-meta">
+                    <strong>Admin</strong>
+                    <span>PRADEX</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-content">
+            <div class="page-header">
+                <div>
+                    <div class="breadcrumb-mini"><a href="dashboard.html">Home</a> › Inventory</div>
+                    <h1><span style="color:var(--primary)">▦</span> Inventory</h1>
+                    <p>Manage your product stock, track levels and never run out of essentials.</p>
+                </div>
+                <div class="page-header-meta" id="pageDate"></div>
+            </div>
+
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card"><div class="stat-icon-wrap blue">▣</div><div class="stat-label">Total Products</div><div class="stat-value">—</div></div>
+                <div class="stat-card"><div class="stat-icon-wrap amber">⚠</div><div class="stat-label">Low Stock</div><div class="stat-value">—</div></div>
+                <div class="stat-card"><div class="stat-icon-wrap rose">∅</div><div class="stat-label">Out of Stock</div><div class="stat-value">—</div></div>
+                <div class="stat-card"><div class="stat-icon-wrap green">₹</div><div class="stat-label">Inventory Value</div><div class="stat-value" style="font-size:1.25rem">—</div></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-h">
+                    <div>
+                        <h3>Product Inventory</h3>
+                        <p>View and manage your current stock levels</p>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="exportCSV()">↓ Export</button>
+                </div>
+                <div class="inv-toolbar">
+                    <input type="search" id="q" class="form-control search-wide" placeholder="Search product or SKU..." oninput="page=1;render()">
+                    <select id="cat" class="form-control" onchange="page=1;render()"><option value="">All Categories</option></select>
+                    <select id="status" class="form-control" onchange="page=1;render()">
+                        <option value="">All Status</option>
+                        <option value="in">In Stock</option>
+                        <option value="low">Low Stock</option>
+                        <option value="out">Out of Stock</option>
+                    </select>
+                    <select id="sort" class="form-control" onchange="render()">
+                        <option value="name">Sort by Name</option>
+                        <option value="stock_asc">Stock: Low → High</option>
+                        <option value="stock_desc">Stock: High → Low</option>
+                        <option value="updated">Last Updated</option>
+                    </select>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="resetFilters()">↺ Reset</button>
+                </div>
+                <div class="admin-table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Product</th>
+                                <th>SKU</th>
+                                <th>Category</th>
+                                <th>Current Qty</th>
+                                <th>Min Stock</th>
+                                <th>Status</th>
+                                <th>Last Updated</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody">
+                            <tr><td colspan="9"><div class="loader-wrap"><div class="spinner"></div><p>Loading inventory...</p></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-footer">
+                    <span id="pageInfo">—</span>
+                    <div class="pager" id="pager"></div>
+                </div>
+            </div>
+            <p class="admin-footer-note">© 2026 PRADEX · Engineered for Innovators</p>
+        </div>
     </div>
+
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
@@ -52,31 +134,234 @@
     <script>
         if (!Auth.isAdminLoggedIn()) location.href = "login.html";
 
+        let products = [];
+        let page = 1;
+        const PER = 10;
+
+        document.getElementById("pageDate").textContent =
+            new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+
+        function stockStatus(p) {
+            const stock = Number(p.stock) || 0;
+            const min = Number(p.minimum_stock) || Number(p.min_stock) || 5;
+            if (stock <= 0) return { key: "out", label: "Out of Stock", pill: "out" };
+            if (stock <= min) return { key: "low", label: "Low Stock", pill: "low" };
+            return { key: "in", label: "In Stock", pill: "in" };
+        }
+
+        function filtered() {
+            const q = (document.getElementById("q").value || "").toLowerCase().trim();
+            const cat = document.getElementById("cat").value;
+            const st = document.getElementById("status").value;
+            const sort = document.getElementById("sort").value;
+            let list = products.slice();
+            if (q) {
+                list = list.filter(p =>
+                    String(p.name || "").toLowerCase().includes(q) ||
+                    String(p.sku || "").toLowerCase().includes(q) ||
+                    String(p.product_id || "").toLowerCase().includes(q)
+                );
+            }
+            if (cat) list = list.filter(p => String(p.category || "") === cat);
+            if (st) list = list.filter(p => stockStatus(p).key === st);
+            list.sort((a, b) => {
+                if (sort === "stock_asc") return (Number(a.stock)||0) - (Number(b.stock)||0);
+                if (sort === "stock_desc") return (Number(b.stock)||0) - (Number(a.stock)||0);
+                if (sort === "updated") return String(b.updated_at || b.created_at || "").localeCompare(String(a.updated_at || a.created_at || ""));
+                return String(a.name || "").localeCompare(String(b.name || ""));
+            });
+            return list;
+        }
+
+        function resetFilters() {
+            document.getElementById("q").value = "";
+            document.getElementById("cat").value = "";
+            document.getElementById("status").value = "";
+            document.getElementById("sort").value = "name";
+            page = 1;
+            render();
+        }
+
+        function renderStats() {
+            let low = 0, out = 0, value = 0;
+            products.forEach(p => {
+                const st = stockStatus(p);
+                if (st.key === "low") low++;
+                if (st.key === "out") out++;
+                value += (Number(p.stock) || 0) * (Number(p.selling_price) || Number(p.cost_price) || 0);
+            });
+            document.getElementById("statsGrid").innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-icon-wrap blue">▣</div>
+                    <div class="stat-label">Total Products</div>
+                    <div class="stat-value">${products.length}</div>
+                    <div class="stat-sub">Across all categories</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap amber">⚠</div>
+                    <div class="stat-label">Low Stock</div>
+                    <div class="stat-value">${low}</div>
+                    <div class="stat-sub">Products below minimum</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap rose">∅</div>
+                    <div class="stat-label">Out of Stock</div>
+                    <div class="stat-value">${out}</div>
+                    <div class="stat-sub">Products need restock</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap green">₹</div>
+                    <div class="stat-label">Inventory Value</div>
+                    <div class="stat-value" style="font-size:1.25rem">${Utils.formatPrice(value)}</div>
+                    <div class="stat-sub">Total stock value (est.)</div>
+                </div>`;
+        }
+
+        function render() {
+            const list = filtered();
+            const totalPages = Math.max(1, Math.ceil(list.length / PER));
+            if (page > totalPages) page = totalPages;
+            const start = (page - 1) * PER;
+            const slice = list.slice(start, start + PER);
+
+            const tbody = document.getElementById("tbody");
+            if (!slice.length) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:2rem">No products match filters</td></tr>`;
+            } else {
+                tbody.innerHTML = slice.map((p, i) => {
+                    const st = stockStatus(p);
+                    const stock = Number(p.stock) || 0;
+                    const min = Number(p.minimum_stock) || Number(p.min_stock) || 5;
+                    const img = (typeof Utils.imageUrl === "function" ? Utils.imageUrl(p.image_url, 100) : p.image_url) || "";
+                    const updated = p.updated_at || p.created_at || "";
+                    const dateStr = updated ? new Date(updated).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "—";
+                    const qtyClass = st.key === "out" ? "qty-danger" : st.key === "low" ? "qty-warn" : "qty-muted";
+                    const minClass = stock < min ? "qty-danger" : "";
+                    const id = String(p.product_id || "").replace(/"/g, "");
+                    return `<tr>
+                        <td style="color:var(--text-muted)">${start + i + 1}</td>
+                        <td>
+                            <div class="prod-cell">
+                                ${img ? `<img src="${img}" alt="" onerror="this.style.display='none'">` : `<div style="width:44px;height:44px;border-radius:10px;background:#e2e8f0"></div>`}
+                                <div>
+                                    <strong>${esc(p.name)}</strong>
+                                    <span>${esc(p.short_description || p.brand || "")}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="font-size:0.8rem;color:var(--text-muted)">${esc(p.sku || p.product_id || "—")}</td>
+                        <td>${esc(p.category || "—")}</td>
+                        <td class="${qtyClass}" id="qty-label-${id}">${stock}</td>
+                        <td class="${minClass}">${min}</td>
+                        <td><span class="status-pill ${st.pill}">${st.label}</span></td>
+                        <td style="font-size:0.8rem;color:var(--text-muted);white-space:nowrap">${dateStr}</td>
+                        <td>
+                            <div class="stock-edit-row">
+                                <input type="number" min="0" id="stock-${id}" value="${stock}">
+                                <button type="button" class="btn btn-primary btn-sm" onclick="saveStock('${id}')">Update Stock</button>
+                            </div>
+                        </td>
+                    </tr>`;
+                }).join("");
+            }
+
+            document.getElementById("pageInfo").textContent =
+                list.length ? `Showing ${start + 1} to ${Math.min(start + PER, list.length)} of ${list.length} products` : "No products";
+
+            const pager = document.getElementById("pager");
+            let buttons = "";
+            buttons += `<button type="button" ${page <= 1 ? "disabled" : ""} onclick="page--;render()">‹</button>`;
+            const maxBtn = Math.min(totalPages, 7);
+            let from = Math.max(1, page - 3);
+            let to = Math.min(totalPages, from + 6);
+            from = Math.max(1, to - 6);
+            for (let n = from; n <= to; n++) {
+                buttons += `<button type="button" class="${n === page ? "active" : ""}" onclick="page=${n};render()">${n}</button>`;
+            }
+            if (to < totalPages) buttons += `<span style="padding:0 4px">…</span><button type="button" onclick="page=${totalPages};render()">${totalPages}</button>`;
+            buttons += `<button type="button" ${page >= totalPages ? "disabled" : ""} onclick="page++;render()">›</button>`;
+            pager.innerHTML = buttons;
+        }
+
+        function esc(s) {
+            return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        async function saveStock(id) {
+            const input = document.getElementById("stock-" + id);
+            if (!input) return;
+            const qty = Math.max(0, parseInt(input.value, 10) || 0);
+            const p = products.find(x => String(x.product_id) === String(id));
+            if (!p) return;
+            try {
+                let res;
+                if (API.adminUpdateStock) {
+                    res = await API.adminUpdateStock(id, qty);
+                } else if (API.adminUpdateProduct) {
+                    res = await API.adminUpdateProduct({ ...p, stock: qty });
+                } else {
+                    res = await API.request("updateStock", { product_id: id, stock: qty });
+                }
+                if (res && res.success) {
+                    p.stock = qty;
+                    p.updated_at = new Date().toISOString();
+                    Utils.toast("Stock updated", "success");
+                    renderStats();
+                    render();
+                } else {
+                    Utils.toast((res && res.message) || "Update failed", "error");
+                }
+            } catch (e) {
+                Utils.toast("Update failed", "error");
+            }
+        }
+
+        function exportCSV() {
+            const list = filtered();
+            const headers = ["product_id", "name", "sku", "category", "stock", "minimum_stock", "selling_price", "status"];
+            const rows = list.map(p => {
+                const st = stockStatus(p);
+                return {
+                    product_id: p.product_id,
+                    name: p.name,
+                    sku: p.sku || "",
+                    category: p.category || "",
+                    stock: p.stock,
+                    minimum_stock: p.minimum_stock || p.min_stock || 5,
+                    selling_price: p.selling_price,
+                    status: st.label
+                };
+            });
+            if (typeof downloadCSV === "function") {
+                downloadCSV("inventory-" + new Date().toISOString().slice(0, 10) + ".csv", headers, rows);
+            } else {
+                const lines = [headers.join(",")].concat(rows.map(r => headers.map(h => `"${String(r[h] ?? "").replace(/"/g, '""')}"`).join(",")));
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/csv" }));
+                a.download = "inventory.csv";
+                a.click();
+            }
+            Utils.toast("CSV exported", "success");
+        }
+
         async function load() {
-            const res = await API.adminGetProducts();
-            const list = res.success ? res.data : [];
-            document.getElementById("tbody").innerHTML = list.map(p => {
-                const st = p.stock <= 0 ? "out-of-stock" : (p.stock <= (p.minimum_stock||5) ? "low-stock" : "in-stock");
-                const label = p.stock <= 0 ? "Out of Stock" : (p.stock <= (p.minimum_stock||5) ? "Low Stock" : "In Stock");
-                return `<tr>
-                    <td>${p.name}</td>
-                    <td>${p.stock}</td>
-                    <td>${p.minimum_stock || 5}</td>
-                    <td><span class="status-badge status-${st}">${label}</span></td>
-                    <td>
-                        <input type="number" id="qty-${p.product_id}" value="${p.stock}" min="0" style="width:70px;padding:0.3rem;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text)">
-                        <button class="btn btn-sm btn-primary" onclick="updateStock('${p.product_id}')">Save</button>
-                    </td>
-                </tr>`;
-            }).join("");
+            try {
+                const res = await API.adminGetProducts();
+                products = (res.success && res.data) ? res.data : [];
+                const cats = [...new Set(products.map(p => p.category).filter(Boolean))].sort();
+                const catEl = document.getElementById("cat");
+                cats.forEach(c => {
+                    const o = document.createElement("option");
+                    o.value = c; o.textContent = c;
+                    catEl.appendChild(o);
+                });
+                renderStats();
+                render();
+            } catch (e) {
+                document.getElementById("tbody").innerHTML =
+                    `<tr><td colspan="9" style="text-align:center;color:var(--danger)">Failed to load inventory</td></tr>`;
+            }
         }
-
-        async function updateStock(id) {
-            const qty = Number(document.getElementById("qty-" + id).value);
-            const res = await API.adminUpdateStock(id, qty);
-            Utils.toast(res.success ? "Stock updated (demo)" : res.message, res.success ? "success" : "error");
-        }
-
         load();
     </script>
 </body>

@@ -5,100 +5,323 @@
     <link rel="icon" href="images/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" href="images/favicon-32.png" sizes="32x32">
     <link rel="apple-touch-icon" href="images/favicon-180.png">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard – Pradeep Tech Verse</title>
+    <title>Dashboard – PRADEX Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/admin.css">
     <style>
-      .dash-hero{background:linear-gradient(135deg,rgba(0,212,255,0.12),rgba(0,255,136,0.06));border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem 1.75rem;margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
-      .dash-hero h1{font-size:1.35rem;margin:0 0 0.25rem}
-      .dash-hero p{color:var(--text-muted);margin:0;font-size:0.9rem}
-      .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:1rem;margin-bottom:1.75rem}
-      .stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.15rem 1.1rem;position:relative;overflow:hidden;transition:border-color .2s,transform .2s}
-      .stat-card:hover{border-color:rgba(0,212,255,.35);transform:translateY(-2px)}
-      .stat-card .stat-icon{position:absolute;right:12px;top:12px;font-size:1.4rem;opacity:.35}
-      .stat-card .stat-label{font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:0.35rem}
-      .stat-card .stat-value{font-size:1.55rem;font-weight:700}
-      .dash-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:1.25rem}
-      @media(max-width:900px){.dash-grid{grid-template-columns:1fr}}
-      .panel{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-      .panel-h{padding:0.9rem 1.15rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
-      .panel-h h3{margin:0;font-size:0.95rem}
-      .quick-links{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;padding:1rem}
-      .quick-links a{display:flex;align-items:center;gap:0.5rem;padding:0.75rem;background:var(--bg-elevated);border-radius:var(--radius-sm);color:var(--text);font-size:0.88rem;border:1px solid transparent}
-      .quick-links a:hover{border-color:var(--primary);color:var(--primary)}
+      .welcome-banner {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 1rem;
+        align-items: center;
+        background: linear-gradient(120deg, #eff6ff 0%, #f0f9ff 45%, #e0f2fe 100%);
+        border: 1px solid #dbeafe;
+        border-radius: 18px;
+        padding: 1.35rem 1.5rem;
+        margin-bottom: 1.25rem;
+        position: relative;
+        overflow: hidden;
+      }
+      .welcome-banner h1 {
+        margin: 0;
+        font-size: 1.45rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .welcome-banner p { margin: 0.35rem 0 0; color: var(--text-muted); font-size: 0.92rem; }
+      .welcome-quote {
+        font-size: 0.8rem;
+        color: #64748b;
+        font-style: italic;
+        max-width: 220px;
+        text-align: right;
+        line-height: 1.4;
+      }
+      .welcome-quote span { display: block; margin-top: 0.25rem; font-style: normal; font-weight: 600; color: #137fec; }
+      .dash-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+      }
+      .dash-stat {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.15rem 1.2rem;
+        box-shadow: var(--shadow);
+        position: relative;
+        overflow: hidden;
+      }
+      .dash-stat .ico {
+        width: 44px; height: 44px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem; margin-bottom: 0.7rem;
+      }
+      .dash-stat .lbl { font-size: 0.82rem; color: var(--text-muted); font-weight: 500; }
+      .dash-stat .val { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; margin-top: 0.15rem; }
+      .dash-stat .sub { font-size: 0.75rem; color: var(--text-dim); margin-top: 0.35rem; }
+      .ico.blue { background: #dbeafe; }
+      .ico.green { background: #d1fae5; }
+      .ico.amber { background: #fef3c7; }
+      .ico.purple { background: #ede9fe; }
+      .dash-grid-3 {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr 0.9fr;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+      }
+      .dash-grid-bottom {
+        display: grid;
+        grid-template-columns: 1.3fr 1fr 0.85fr;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+      }
+      @media (max-width: 1100px) {
+        .dash-stats { grid-template-columns: repeat(2, 1fr); }
+        .dash-grid-3, .dash-grid-bottom { grid-template-columns: 1fr; }
+        .welcome-quote { display: none; }
+      }
+      .chart-card {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.1rem 1.2rem;
+        box-shadow: var(--shadow);
+      }
+      .chart-card h3 {
+        margin: 0 0 0.25rem;
+        font-size: 0.95rem;
+        font-weight: 700;
+        display: flex; align-items: center; gap: 0.4rem;
+      }
+      .chart-card .chart-sub { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.85rem; }
+      .chart-head {
+        display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.5rem;
+      }
+      .line-chart-wrap { width: 100%; height: 180px; }
+      .line-chart-wrap svg { width: 100%; height: 100%; }
+      .donut-wrap {
+        display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+      }
+      .donut {
+        width: 120px; height: 120px; border-radius: 50%;
+        position: relative; flex-shrink: 0;
+      }
+      .donut-inner {
+        position: absolute; inset: 22px;
+        background: #fff; border-radius: 50%;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+      }
+      .donut-inner strong { font-size: 1.15rem; }
+      .donut-inner span { font-size: 0.65rem; color: var(--text-muted); }
+      .legend { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 120px; }
+      .legend li {
+        display: flex; align-items: center; gap: 0.45rem;
+        font-size: 0.78rem; color: var(--text-muted);
+        padding: 0.25rem 0;
+      }
+      .legend i {
+        width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+      }
+      .legend .cnt { margin-left: auto; font-weight: 600; color: var(--text); }
+      .legend .pct { color: var(--text-dim); min-width: 32px; text-align: right; }
+      .mini-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+      .mini-table th {
+        text-align: left; padding: 0.5rem 0.4rem; color: var(--text-muted);
+        font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em;
+        border-bottom: 1px solid var(--border); font-weight: 600;
+      }
+      .mini-table td {
+        padding: 0.65rem 0.4rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle;
+      }
+      .mini-table tr:last-child td { border-bottom: none; }
+      .qa-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem;
+      }
+      .qa-grid a {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 0.35rem; padding: 0.85rem 0.5rem; border-radius: 12px;
+        font-size: 0.75rem; font-weight: 600; color: var(--text); text-align: center;
+        transition: transform .15s, box-shadow .15s;
+      }
+      .qa-grid a:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+      .qa-grid .qa-ico {
+        width: 36px; height: 36px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center; font-size: 1rem;
+      }
+      .qa-blue { background: #eff6ff; } .qa-blue .qa-ico { background: #dbeafe; }
+      .qa-green { background: #ecfdf5; } .qa-green .qa-ico { background: #d1fae5; }
+      .qa-orange { background: #fff7ed; } .qa-orange .qa-ico { background: #ffedd5; }
+      .qa-violet { background: #f5f3ff; } .qa-violet .qa-ico { background: #ede9fe; }
+      .qa-pink { background: #fdf2f8; } .qa-pink .qa-ico { background: #fce7f3; }
+      .qa-indigo { background: #eef2ff; } .qa-indigo .qa-ico { background: #e0e7ff; }
+      .prod-mini { display: flex; align-items: center; gap: 0.5rem; }
+      .prod-mini img {
+        width: 32px; height: 32px; border-radius: 8px; object-fit: cover; background: #e2e8f0;
+      }
+      .motto-bar {
+        display: flex; justify-content: space-between; align-items: center;
+        gap: 1rem; flex-wrap: wrap;
+        background: linear-gradient(90deg, #eff6ff, #f8fafc);
+        border: 1px solid #dbeafe; border-radius: 14px;
+        padding: 1rem 1.25rem; margin-top: 0.25rem;
+      }
+      .motto-bar p { margin: 0; font-size: 0.9rem; color: #334155; }
+      .motto-bar strong { color: #137fec; }
+      .badge-dot {
+        display: inline-block; padding: 0.2rem 0.55rem; border-radius: 999px;
+        font-size: 0.72rem; font-weight: 600;
+      }
+      .badge-paid { background: #d1fae5; color: #047857; }
+      .badge-pending { background: #fef3c7; color: #b45309; }
+      .badge-shipped { background: #dbeafe; color: #1d4ed8; }
+      .badge-delivered { background: #d1fae5; color: #047857; }
+      .badge-other { background: #f1f5f9; color: #64748b; }
+      .view-all { font-size: 0.8rem; font-weight: 600; color: var(--primary); }
     </style>
 </head>
 <body class="admin-body">
     <aside class="admin-sidebar" id="sidebar">
-        <div class="logo"><span class="logo-icon">PT</span><span>Admin</span></div>
+        <div class="logo">
+            <span class="logo-icon">P</span>
+            <div>
+                <span>PRADEX Admin</span>
+                <span class="logo-sub">Electronics for a Smarter Tomorrow</span>
+            </div>
+        </div>
         <nav class="admin-nav">
-            <a href="dashboard.html" class="active"><span class="nav-icon">📊</span> Dashboard</a>
-            <a href="products.html"><span class="nav-icon">📦</span> Products</a>
-            <a href="add-product.html"><span class="nav-icon">➕</span> Add Product</a>
+            <a href="dashboard.html" class="active"><span class="nav-icon">⌂</span> Dashboard</a>
+            <a href="products.html"><span class="nav-icon">▣</span> Products</a>
+            <a href="inventory.html"><span class="nav-icon">▦</span> Inventory</a>
             <a href="orders.html"><span class="nav-icon">🛒</span> Orders</a>
-            <a href="inventory.html"><span class="nav-icon">📋</span> Inventory</a>
             <a href="purchasing.html"><span class="nav-icon">🧾</span> Purchasing</a>
-            <a href="customers.html"><span class="nav-icon">👥</span> Customers</a>
-            <a href="categories.html"><span class="nav-icon">🏷️</span> Categories</a>
+            <a href="customers.html"><span class="nav-icon">👤</span> Customers</a>
+            <a href="categories.html"><span class="nav-icon">🏷</span> Categories</a>
             <a href="coupons.html"><span class="nav-icon">🎟</span> Coupons</a>
-            <a href="reports.html"><span class="nav-icon">📈</span> Reports</a>
+            <a href="reports.html"><span class="nav-icon">◉</span> Reports</a>
             <a href="finance.html"><span class="nav-icon">💳</span> Finance</a>
-            <a href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
-            <a href="#" onclick="adminLogout()"><span class="nav-icon">🚪</span> Logout</a>
+            <a href="settings.html"><span class="nav-icon">⚙</span> Settings</a>
+            <a href="add-product.html"><span class="nav-icon">＋</span> Add Product</a>
+            <a href="#" onclick="adminLogout()"><span class="nav-icon">→</span> Logout</a>
         </nav>
+        <div class="admin-sidebar-footer">
+            <strong>Build · Manage · Grow</strong>
+            PRADEX Electronics
+        </div>
     </aside>
+
     <div class="admin-main">
         <div class="admin-topbar">
-            <button class="admin-sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
-            <h2 style="font-size:1.1rem">Dashboard</h2>
-            <span style="color:var(--text-muted);font-size:0.9rem">Pradeep Tech Verse</span>
+            <button class="admin-sidebar-toggle" type="button" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+            <div class="admin-search">
+                <input type="search" placeholder="Search products, orders, customers..." onkeydown="if(event.key==='Enter')location.href='products.html'">
+            </div>
+            <div class="admin-topbar-right">
+                <div class="admin-avatar">P</div>
+                <div class="admin-user-meta">
+                    <strong>Admin</strong>
+                    <span>PRADEX</span>
+                </div>
+            </div>
         </div>
+
         <div class="admin-content">
-            <div class="dash-hero">
+            <div class="welcome-banner">
                 <div>
-                    <h1>Welcome back 👋</h1>
-                    <p id="heroSub">Loading store overview…</p>
+                    <h1>Welcome back! 👋</h1>
+                    <p>Here’s what’s happening with your store today.</p>
                 </div>
-                <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
-                    <a href="add-product.html" class="btn btn-primary btn-sm">+ Product</a>
-                    <a href="orders.html" class="btn btn-outline btn-sm">Orders</a>
+                <div class="welcome-quote">
+                    “Manage Today, Build a Smarter Tomorrow.”
+                    <span>— PRADEX</span>
                 </div>
             </div>
-            <div class="stats-grid" id="statsGrid">
-                <div class="loader-wrap" style="grid-column:1/-1"><div class="spinner"></div></div>
+
+            <div class="dash-stats" id="dashStats">
+                <div class="dash-stat"><div class="ico blue">▣</div><div class="lbl">Total Products</div><div class="val">—</div></div>
+                <div class="dash-stat"><div class="ico green">🛒</div><div class="lbl">Total Orders</div><div class="val">—</div></div>
+                <div class="dash-stat"><div class="ico amber">⚠</div><div class="lbl">Low Stock Items</div><div class="val">—</div></div>
+                <div class="dash-stat"><div class="ico purple">₹</div><div class="lbl">Total Inventory Value</div><div class="val" style="font-size:1.25rem">—</div></div>
             </div>
-            <div class="dash-grid">
-                <div class="panel">
-                    <div class="panel-h"><h3>Recent Orders</h3><a href="orders.html" style="font-size:0.85rem">View all</a></div>
-                    <div class="admin-table-wrap" style="border:none;border-radius:0">
-                        <table class="admin-table" id="recentOrders">
-                            <thead><tr><th>Order</th><th>Customer</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
-                            <tbody></tbody>
+
+            <div class="dash-grid-3">
+                <div class="chart-card">
+                    <div class="chart-head">
+                        <div>
+                            <h3>📊 Sales Overview</h3>
+                            <div class="chart-sub">Order value (last 7 days)</div>
+                        </div>
+                    </div>
+                    <div class="line-chart-wrap" id="salesChart"></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-head">
+                        <div>
+                            <h3>⬤ Product Category Distribution</h3>
+                            <div class="chart-sub">Share by category</div>
+                        </div>
+                    </div>
+                    <div class="donut-wrap" id="catDonut"></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-head">
+                        <div>
+                            <h3>⚡ Stock Status</h3>
+                            <div class="chart-sub">Inventory health</div>
+                        </div>
+                    </div>
+                    <div class="donut-wrap" id="stockDonut"></div>
+                </div>
+            </div>
+
+            <div class="dash-grid-bottom">
+                <div class="chart-card">
+                    <div class="chart-head">
+                        <h3>🛒 Recent Orders</h3>
+                        <a class="view-all" href="orders.html">View all</a>
+                    </div>
+                    <div style="overflow-x:auto">
+                        <table class="mini-table">
+                            <thead>
+                                <tr><th>#</th><th>Customer</th><th>Amount</th><th>Status</th><th>Date</th></tr>
+                            </thead>
+                            <tbody id="recentOrders"><tr><td colspan="5" style="color:var(--text-muted)">Loading...</td></tr></tbody>
                         </table>
                     </div>
                 </div>
-                <div class="panel" id="lowStockPanel" style="margin-bottom:1.25rem;display:none">
-                    <div class="panel-h"><h3>⚠️ Low Stock Alert</h3><a href="inventory.html" style="font-size:0.85rem">Inventory</a></div>
-                    <div id="lowStockList" style="padding:0.75rem 1rem;font-size:0.9rem"></div>
+                <div class="chart-card">
+                    <div class="chart-head">
+                        <h3>⚠ Low Stock Products</h3>
+                        <a class="view-all" href="inventory.html">View all</a>
+                    </div>
+                    <div id="lowStockList"></div>
                 </div>
-                <div class="panel">
-                    <div class="panel-h"><h3>Quick Actions</h3></div>
-                    <div class="quick-links">
-                        <a href="add-product.html">➕ Add Product</a>
-                        <a href="inventory.html">📋 Inventory</a>
-                        <a href="orders.html">🛒 Manage Orders</a>
-                        <a href="customers.html">👥 Customers</a>
-                        <a href="categories.html">🏷️ Categories</a>
-                        <a href="settings.html">⚙️ Settings</a>
-                        <a href="../index.html" target="_blank">🌐 View Store</a>
-                        <a href="../products.html" target="_blank">🛍 Products Page</a>
+                <div class="chart-card">
+                    <div class="chart-head"><h3>⚡ Quick Actions</h3></div>
+                    <div class="qa-grid">
+                        <a class="qa-blue" href="add-product.html"><span class="qa-ico">＋</span>Add Product</a>
+                        <a class="qa-green" href="inventory.html"><span class="qa-ico">▦</span>Manage Inventory</a>
+                        <a class="qa-orange" href="orders.html"><span class="qa-ico">🛒</span>View Orders</a>
+                        <a class="qa-violet" href="purchasing.html"><span class="qa-ico">🧾</span>Create Purchase</a>
+                        <a class="qa-pink" href="categories.html"><span class="qa-ico">🏷</span>Categories</a>
+                        <a class="qa-indigo" href="reports.html"><span class="qa-ico">◉</span>Generate Report</a>
                     </div>
                 </div>
             </div>
+
+            <div class="motto-bar">
+                <p><strong>“Small components. Big possibilities.”</strong><br>
+                <span style="font-size:0.82rem;color:var(--text-muted)">Keep your inventory updated and your ideas moving forward.</span></p>
+                <div style="font-weight:800;color:#0b1b33;letter-spacing:0.04em">PRADEX</div>
+            </div>
         </div>
     </div>
+
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
@@ -106,128 +329,204 @@
     <script src="js/admin-common.js"></script>
     <script>
         if (!Auth.isAdminLoggedIn()) location.href = "login.html";
-        function adminLogout(){ Auth.adminLogout(); location.href="login.html"; }
+
+        const CAT_COLORS = ["#137fec","#10b981","#f59e0b","#8b5cf6","#ec4899","#06b6d4","#64748b","#f97316"];
+
+        function statusBadge(st) {
+            const s = String(st || "").toLowerCase();
+            let cls = "badge-other";
+            if (/paid|success|completed/.test(s)) cls = "badge-paid";
+            else if (/pending|confirm/.test(s)) cls = "badge-pending";
+            else if (/ship/.test(s)) cls = "badge-shipped";
+            else if (/deliver/.test(s)) cls = "badge-delivered";
+            return `<span class="badge-dot ${cls}">${st || "—"}</span>`;
+        }
+
+        function donutBackground(parts) {
+            // parts: [{color, value}]
+            const total = parts.reduce((a, p) => a + p.value, 0) || 1;
+            let acc = 0;
+            const stops = parts.map(p => {
+                const start = (acc / total) * 360;
+                acc += p.value;
+                const end = (acc / total) * 360;
+                return `${p.color} ${start}deg ${end}deg`;
+            });
+            return `conic-gradient(${stops.join(",")})`;
+        }
+
+        function renderLineChart(byDay) {
+            const days = [];
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                days.push(d.toISOString().slice(0, 10));
+            }
+            const values = days.map(d => Number(byDay[d] || 0));
+            const max = Math.max(1, ...values);
+            const w = 400, h = 160, pad = 24;
+            const pts = values.map((v, i) => {
+                const x = pad + (i / 6) * (w - pad * 2);
+                const y = h - pad - (v / max) * (h - pad * 2);
+                return [x, y];
+            });
+            const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
+            const area = line + ` L${pts[6][0]},${h - pad} L${pts[0][0]},${h - pad} Z`;
+            const labels = days.map((d, i) => {
+                const x = pad + (i / 6) * (w - pad * 2);
+                const lab = d.slice(8) + "/" + d.slice(5, 7);
+                return `<text x="${x}" y="${h - 6}" text-anchor="middle" fill="#94a3b8" font-size="9">${lab}</text>`;
+            }).join("");
+            const dots = pts.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#137fec" stroke="#fff" stroke-width="2"/>`).join("");
+            document.getElementById("salesChart").innerHTML = `
+              <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#137fec" stop-opacity="0.25"/>
+                    <stop offset="100%" stop-color="#137fec" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="${area}" fill="url(#areaFill)"/>
+                <path d="${line}" fill="none" stroke="#137fec" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                ${dots}${labels}
+              </svg>`;
+        }
 
         async function load() {
             try {
-                const [dash, orders] = await Promise.all([
+                const [dash, ordersRes, prodsRes] = await Promise.all([
                     API.adminGetDashboard().catch(() => ({ success: false })),
-                    API.adminGetOrders().catch(() => ({ success: false, data: [] }))
+                    API.adminGetOrders().catch(() => ({ success: false, data: [] })),
+                    API.adminGetProducts().catch(() => ({ success: false, data: [] }))
                 ]);
-                if (dash.success && dash.data) {
-                    const d = dash.data;
-                    document.getElementById("heroSub").textContent =
-                        (d.total_orders||0) + " orders · " + (d.total_customers||0) + " customers · " + Utils.formatPrice(d.total_sales||0) + " sales";
-                    document.getElementById("statsGrid").innerHTML = `
-                        <div class="stat-card primary"><span class="stat-icon">📦</span><div class="stat-label">Products</div><div class="stat-value">${d.total_products||0}</div></div>
-                        <div class="stat-card"><span class="stat-icon">📊</span><div class="stat-label">Total Stock</div><div class="stat-value">${d.total_stock||0}</div></div>
-                        <div class="stat-card warning"><span class="stat-icon">⚠️</span><div class="stat-label">Low Stock</div><div class="stat-value">${d.low_stock||0}</div></div>
-                        <div class="stat-card danger"><span class="stat-icon">📭</span><div class="stat-label">Out of Stock</div><div class="stat-value">${d.out_of_stock||0}</div></div>
-                        <div class="stat-card"><span class="stat-icon">🛒</span><div class="stat-label">Orders</div><div class="stat-value">${d.total_orders||0}</div></div>
-                        <div class="stat-card success"><span class="stat-icon">✅</span><div class="stat-label">Delivered</div><div class="stat-value">${d.delivered_orders||0}</div></div>
-                        <div class="stat-card primary"><span class="stat-icon">👥</span><div class="stat-label">Customers</div><div class="stat-value">${d.total_customers||0}</div></div>
-                        <div class="stat-card success"><span class="stat-icon">💰</span><div class="stat-label">Sales</div><div class="stat-value" style="font-size:1.2rem">${Utils.formatPrice(d.total_sales||0)}</div></div>
-                    `;
 
-                // Action panels: today / pending UPI / COD / low stock
-                const orderList = (orders.success && orders.data) ? orders.data : [];
-                const today = new Date().toISOString().slice(0, 10);
-                const isToday = (d) => String(d || "").slice(0, 10) === today;
-                const todayOrders = orderList.filter(o => isToday(o.created_at));
-                const pendingUpi = orderList.filter(o =>
-                    String(o.payment_method || "").toLowerCase().includes("upi") &&
-                    !/paid|success|completed/i.test(String(o.payment_status || ""))
-                );
-                const codPending = orderList.filter(o =>
-                    String(o.payment_method || "").toLowerCase() === "cod" &&
-                    !/paid|collected|success/i.test(String(o.payment_status || "")) &&
-                    !/cancelled/i.test(String(o.order_status || ""))
-                );
-                const ap = document.getElementById("actionPanels");
-                if (ap) {
-                    ap.innerHTML = `
-                    <div class="panel"><div class="panel-h"><h3>Today's orders</h3><a href="orders.html">View</a></div>
-                      <div style="padding:1rem;font-size:1.5rem;font-weight:700">${todayOrders.length}</div>
-                      <div style="padding:0 1rem 1rem;color:var(--text-muted);font-size:.85rem">${Utils.formatPrice(todayOrders.reduce((a,o)=>a+(Number(o.total)||0),0))} value</div></div>
-                    <div class="panel"><div class="panel-h"><h3>Pending UPI</h3><a href="orders.html">View</a></div>
-                      <div style="padding:1rem;font-size:1.5rem;font-weight:700;color:var(--warning)">${pendingUpi.length}</div>
-                      <div style="padding:0 1rem 1rem;font-size:.8rem;color:var(--text-muted)">${pendingUpi.slice(0,3).map(o=>o.order_id).join(", ")||"None"}</div></div>
-                    <div class="panel"><div class="panel-h"><h3>COD to collect</h3><a href="finance.html">Finance</a></div>
-                      <div style="padding:1rem;font-size:1.5rem;font-weight:700">${codPending.length}</div>
-                      <div style="padding:0 1rem 1rem;color:var(--text-muted);font-size:.85rem">${Utils.formatPrice(codPending.reduce((a,o)=>a+(Number(o.total)||0),0))} pending</div></div>
-                    <div class="panel"><div class="panel-h"><h3>Low stock</h3><a href="purchasing.html">Purchasing</a></div>
-                      <div style="padding:1rem;font-size:1.5rem;font-weight:700;color:var(--danger)">${d.low_stock||0}</div>
-                      <div style="padding:0 1rem 1rem;font-size:.85rem"><a href="purchasing.html">Create purchase list →</a></div></div>`;
-                }
+                const products = (prodsRes.success && prodsRes.data) ? prodsRes.data : [];
+                const orders = (ordersRes.success && ordersRes.data) ? ordersRes.data : [];
+                const d = (dash.success && dash.data) ? dash.data : {};
 
-                } else {
-                    document.getElementById("heroSub").textContent = "Could not load overview — check Apps Script URL";
-                    document.getElementById("statsGrid").innerHTML = `<div class="stat-card"><div class="stat-label">Status</div><div class="stat-value" style="font-size:1rem">Offline / Error</div></div>`;
-                }
-                if (orders.success) {
-                    const list = (orders.data || []).slice().reverse().slice(0, 8);
-                    document.querySelector("#recentOrders tbody").innerHTML = list.length ? list.map(o => `
-                        <tr>
-                            <td><a href="order-detail.html?id=${encodeURIComponent(o.order_id)}" style="color:var(--primary)">${o.order_id}</a></td>
-                            <td>${o.name || "—"}</td>
-                            <td>${Utils.formatPrice(o.total)}</td>
-                            <td><span class="status-badge status-${(o.order_status||'').toLowerCase().replace(/ /g,'-')}">${o.order_status}</span></td>
-                            <td>${o.created_at ? new Date(o.created_at).toLocaleDateString() : "—"}</td>
-                        </tr>
-                    `).join("") : `<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">No orders yet</td></tr>`;
-                } else {
-                    document.querySelector("#recentOrders tbody").innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">No orders / offline</td></tr>`;
-                }
-                const prods = await API.adminGetProducts().catch(() => ({ success: false }));
-                if (prods.success) {
-                    const low = (prods.data || []).filter(p => Number(p.stock) <= (Number(p.minimum_stock) || 5));
-                    const out = (prods.data || []).filter(p => Number(p.stock) <= 0);
-                    window._lowStockList = low;
-                    if (low.length) {
-                        const panel = document.getElementById("lowStockPanel");
-                        if (panel) {
-                            panel.style.display = "block";
-                            const listEl = document.getElementById("lowStockList");
-                            if (listEl) {
-                                listEl.innerHTML = low.map(p =>
-                                    `<div style="display:flex;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid var(--border)">
-                                        <span>${p.name}</span><span class="status-badge status-low-stock">${p.stock} left</span></div>`
-                                ).join("") + `<div style="margin-top:0.85rem;display:flex;gap:0.5rem;flex-wrap:wrap">
-                                    <button type="button" class="btn btn-primary btn-sm" onclick="alertLowStockWA()">WhatsApp alert</button>
-                                    <a class="btn btn-outline btn-sm" href="purchasing.html">Open Purchasing</a>
-                                </div>`;
-                            }
-                        }
-                        // Once per day auto-hint toast
-                        try {
-                            const day = new Date().toISOString().slice(0,10);
-                            if (localStorage.getItem("ptv_lowstock_hint") !== day && low.length >= 1) {
-                                localStorage.setItem("ptv_lowstock_hint", day);
-                                if (typeof Utils !== "undefined") Utils.toast(low.length + " product(s) low on stock", "info");
-                            }
-                        } catch (e) {}
-                    }
-                }
+                let low = 0, out = 0, invValue = 0;
+                const catMap = {};
+                products.forEach(p => {
+                    const stock = Number(p.stock) || 0;
+                    const min = Number(p.minimum_stock) || Number(p.min_stock) || 5;
+                    if (stock <= 0) out++;
+                    else if (stock <= min) low++;
+                    invValue += stock * (Number(p.selling_price) || 0);
+                    const c = p.category || "Others";
+                    catMap[c] = (catMap[c] || 0) + 1;
+                });
+
+                const totalProducts = products.length || d.total_products || 0;
+                const totalOrders = orders.length || d.total_orders || 0;
+
+                document.getElementById("dashStats").innerHTML = `
+                  <div class="dash-stat">
+                    <div class="ico blue">▣</div>
+                    <div class="lbl">Total Products</div>
+                    <div class="val">${totalProducts}</div>
+                    <div class="sub">Across all categories</div>
+                  </div>
+                  <div class="dash-stat">
+                    <div class="ico green">🛒</div>
+                    <div class="lbl">Total Orders</div>
+                    <div class="val">${totalOrders}</div>
+                    <div class="sub">All time</div>
+                  </div>
+                  <div class="dash-stat">
+                    <div class="ico amber">⚠</div>
+                    <div class="lbl">Low Stock Items</div>
+                    <div class="val">${low}</div>
+                    <div class="sub">Need attention</div>
+                  </div>
+                  <div class="dash-stat">
+                    <div class="ico purple">₹</div>
+                    <div class="lbl">Total Inventory Value</div>
+                    <div class="val" style="font-size:1.25rem">${Utils.formatPrice(invValue)}</div>
+                    <div class="sub">Current stock value</div>
+                  </div>`;
+
+                // Sales by day
+                const byDay = {};
+                orders.forEach(o => {
+                    const day = String(o.created_at || "").slice(0, 10);
+                    if (!day) return;
+                    byDay[day] = (byDay[day] || 0) + (Number(o.total) || 0);
+                });
+                renderLineChart(byDay);
+
+                // Category donut
+                const catEntries = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
+                const topCats = catEntries.slice(0, 6);
+                const otherSum = catEntries.slice(6).reduce((a, x) => a + x[1], 0);
+                if (otherSum) topCats.push(["Others", otherSum]);
+                const catParts = topCats.map((c, i) => ({ name: c[0], value: c[1], color: CAT_COLORS[i % CAT_COLORS.length] }));
+                const catTotal = catParts.reduce((a, p) => a + p.value, 0) || 1;
+                document.getElementById("catDonut").innerHTML = catParts.length ? `
+                  <div class="donut" style="background:${donutBackground(catParts)}">
+                    <div class="donut-inner"><strong>${totalProducts}</strong><span>Products</span></div>
+                  </div>
+                  <ul class="legend">
+                    ${catParts.map(p => `<li><i style="background:${p.color}"></i>${p.name}<span class="cnt">${p.value}</span><span class="pct">${Math.round(p.value/catTotal*100)}%</span></li>`).join("")}
+                  </ul>` : `<p style="color:var(--text-muted);font-size:0.85rem">No products yet</p>`;
+
+                // Stock donut
+                const inStock = Math.max(0, totalProducts - low - out);
+                const stockParts = [
+                    { name: "In Stock", value: inStock, color: "#10b981" },
+                    { name: "Low Stock", value: low, color: "#f59e0b" },
+                    { name: "Out of Stock", value: out, color: "#ef4444" }
+                ].filter(p => p.value > 0);
+                document.getElementById("stockDonut").innerHTML = `
+                  <div class="donut" style="background:${donutBackground(stockParts.length ? stockParts : [{color:'#e2e8f0',value:1}])}">
+                    <div class="donut-inner"><strong>${totalProducts}</strong><span>Total</span></div>
+                  </div>
+                  <ul class="legend">
+                    <li><i style="background:#10b981"></i>In Stock<span class="cnt">${inStock}</span></li>
+                    <li><i style="background:#f59e0b"></i>Low Stock<span class="cnt">${low}</span></li>
+                    <li><i style="background:#ef4444"></i>Out of Stock<span class="cnt">${out}</span></li>
+                  </ul>`;
+
+                // Recent orders
+                const recent = orders.slice().sort((a, b) => String(b.created_at||"").localeCompare(String(a.created_at||""))).slice(0, 5);
+                document.getElementById("recentOrders").innerHTML = recent.length ? recent.map(o => `
+                  <tr>
+                    <td><a href="order-detail.html?id=${encodeURIComponent(o.order_id)}">${o.order_id}</a></td>
+                    <td>${o.name || "—"}</td>
+                    <td>${Utils.formatPrice(o.total)}</td>
+                    <td>${statusBadge(o.order_status || o.payment_status)}</td>
+                    <td style="white-space:nowrap;color:var(--text-muted);font-size:0.78rem">${o.created_at ? new Date(o.created_at).toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"}) : "—"}</td>
+                  </tr>`).join("") : `<tr><td colspan="5" style="color:var(--text-muted)">No orders yet</td></tr>`;
+
+                // Low stock list
+                const lowList = products.filter(p => {
+                    const stock = Number(p.stock) || 0;
+                    const min = Number(p.minimum_stock) || Number(p.min_stock) || 5;
+                    return stock <= min;
+                }).sort((a, b) => (Number(a.stock)||0) - (Number(b.stock)||0)).slice(0, 5);
+
+                document.getElementById("lowStockList").innerHTML = lowList.length ? `
+                  <table class="mini-table">
+                    <thead><tr><th>Product</th><th>Stock</th><th>Min</th><th>Status</th></tr></thead>
+                    <tbody>
+                      ${lowList.map(p => {
+                        const stock = Number(p.stock)||0;
+                        const min = Number(p.minimum_stock)||Number(p.min_stock)||5;
+                        const outS = stock <= 0;
+                        const img = Utils.imageUrl ? Utils.imageUrl(p.image_url, 80) : p.image_url;
+                        return `<tr>
+                          <td><div class="prod-mini">${img ? `<img src="${img}" alt="" onerror="this.style.display='none'">` : ""}<span>${p.name}</span></div></td>
+                          <td style="font-weight:700;color:${outS?'#ef4444':'#b45309'}">${stock}</td>
+                          <td>${min}</td>
+                          <td><span class="badge-dot ${outS?'badge-pending':'badge-pending'}">${outS?'Out of Stock':'Low Stock'}</span></td>
+                        </tr>`;
+                      }).join("")}
+                    </tbody>
+                  </table>` : `<p style="color:var(--text-muted);font-size:0.85rem;margin:0.5rem 0">All stock levels look good.</p>`;
             } catch (err) {
                 console.error(err);
-                document.getElementById("heroSub").textContent = "Load error: " + (err.message || "see console");
+                Utils.toast("Dashboard load error", "error");
             }
         }
-
-        function alertLowStockWA() {
-            const low = window._lowStockList || [];
-            if (!low.length) { Utils.toast("No low stock items", "info"); return; }
-            const store = (API.getStoreSettings && API.getStoreSettings()) || {};
-            let phone = String(store.whatsapp_admin_number || store.whatsapp || "").replace(/\D/g, "");
-            if (phone.length === 10) phone = "91" + phone;
-            const msg = (Utils.wa && Utils.wa.lowStock) ? Utils.wa.lowStock(low) : ("Low stock: " + low.length);
-            if (!phone) {
-                navigator.clipboard.writeText(msg).then(() => Utils.toast("Alert copied — set Admin WhatsApp in Settings", "info")).catch(() => alert(msg));
-                return;
-            }
-            window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msg), "_blank");
-        }
-
         load();
     </script>
 </body>

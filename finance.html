@@ -5,91 +5,316 @@
     <link rel="icon" href="images/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" href="images/favicon-32.png" sizes="32x32">
     <link rel="apple-touch-icon" href="images/favicon-180.png">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finance – Admin</title>
+    <title>Finance – PRADEX Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/admin.css">
+    <style>
+      .fin-hero {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem;
+      }
+      .fin-hero h1 {
+        margin: 0; font-size: 1.55rem; font-weight: 800;
+        display: flex; align-items: center; gap: 0.5rem;
+      }
+      .fin-hero p { margin: 0.3rem 0 0; color: var(--text-muted); font-size: 0.9rem; max-width: 420px; }
+      .fin-quote {
+        font-size: 0.8rem; color: #64748b; font-style: italic; text-align: right; max-width: 220px; line-height: 1.4;
+      }
+      .fin-quote span { display: block; margin-top: 0.25rem; font-style: normal; font-weight: 600; color: #137fec; }
+      .fin-stats {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.25rem;
+      }
+      .fin-stat {
+        background: #fff; border: 1px solid var(--border); border-radius: 16px;
+        padding: 1.1rem 1.2rem; box-shadow: var(--shadow);
+      }
+      .fin-stat .ico {
+        width: 42px; height: 42px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center; font-size: 1.15rem; margin-bottom: 0.65rem;
+      }
+      .fin-stat .lbl { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+      .fin-stat .val { font-size: 1.45rem; font-weight: 800; letter-spacing: -0.02em; margin-top: 0.15rem; }
+      .fin-stat .sub { font-size: 0.75rem; color: var(--text-dim); margin-top: 0.3rem; }
+      .ico.g { background: #d1fae5; } .ico.b { background: #dbeafe; }
+      .ico.p { background: #ede9fe; } .ico.a { background: #ffedd5; }
+      .fin-charts {
+        display: grid; grid-template-columns: 1.4fr 0.9fr 0.9fr; gap: 1rem; margin-bottom: 1.25rem;
+      }
+      .fin-bottom {
+        display: grid; grid-template-columns: 1.5fr 0.9fr; gap: 1rem; margin-bottom: 1.25rem;
+      }
+      @media (max-width: 1100px) {
+        .fin-stats { grid-template-columns: 1fr 1fr; }
+        .fin-charts, .fin-bottom { grid-template-columns: 1fr; }
+        .fin-quote { display: none; }
+      }
+      .card {
+        background: #fff; border: 1px solid var(--border); border-radius: 16px;
+        padding: 1.1rem 1.2rem; box-shadow: var(--shadow);
+      }
+      .card h3 {
+        margin: 0 0 0.2rem; font-size: 0.95rem; font-weight: 700;
+        display: flex; align-items: center; gap: 0.4rem;
+      }
+      .card .sub { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.85rem; }
+      .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.5rem; }
+      .line-wrap { width: 100%; height: 190px; }
+      .line-wrap svg { width: 100%; height: 100%; }
+      .donut-row { display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap; }
+      .donut {
+        width: 110px; height: 110px; border-radius: 50%; position: relative; flex-shrink: 0;
+      }
+      .donut-in {
+        position: absolute; inset: 20px; background: #fff; border-radius: 50%;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+      }
+      .donut-in strong { font-size: 0.85rem; line-height: 1.15; }
+      .donut-in span { font-size: 0.62rem; color: var(--text-muted); }
+      .legend { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 110px; }
+      .legend li {
+        display: flex; align-items: center; gap: 0.4rem;
+        font-size: 0.75rem; color: var(--text-muted); padding: 0.2rem 0;
+      }
+      .legend i { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+      .legend .pct { margin-left: auto; font-weight: 600; color: var(--text); }
+      .mini-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+      .mini-table th {
+        text-align: left; padding: 0.5rem 0.4rem; color: var(--text-muted);
+        font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.03em;
+        border-bottom: 1px solid var(--border); font-weight: 600;
+      }
+      .mini-table td { padding: 0.65rem 0.4rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+      .mini-table tr:last-child td { border-bottom: none; }
+      .amt-in { color: #047857; font-weight: 700; }
+      .amt-out { color: #b91c1c; font-weight: 700; }
+      .type-exp {
+        display: inline-block; padding: 0.15rem 0.45rem; border-radius: 6px;
+        background: #fee2e2; color: #b91c1c; font-size: 0.72rem; font-weight: 600;
+      }
+      .type-inc {
+        display: inline-block; padding: 0.15rem 0.45rem; border-radius: 6px;
+        background: #d1fae5; color: #047857; font-size: 0.72rem; font-weight: 600;
+      }
+      .st-paid { color: #047857; font-weight: 600; font-size: 0.78rem; }
+      .st-pending { color: #b45309; font-weight: 600; font-size: 0.78rem; }
+      .qa-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem; }
+      .qa-grid a, .qa-grid button {
+        display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem;
+        padding: 0.85rem 0.9rem; border-radius: 12px; border: none; cursor: pointer;
+        font-family: inherit; text-align: left; text-decoration: none; color: var(--text);
+        transition: transform .15s;
+      }
+      .qa-grid a:hover, .qa-grid button:hover { transform: translateY(-2px); }
+      .qa-grid strong { font-size: 0.82rem; }
+      .qa-grid span { font-size: 0.72rem; color: var(--text-muted); }
+      .qa-g { background: #ecfdf5; } .qa-b { background: #eff6ff; }
+      .qa-v { background: #f5f3ff; } .qa-p { background: #fdf2f8; }
+      .sum-list { margin: 0; padding: 0; list-style: none; }
+      .sum-list li {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 0.55rem 0; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;
+      }
+      .sum-list li:last-child { border-bottom: none; }
+      .sum-list .k { color: var(--text-muted); }
+      .sum-list .v { font-weight: 700; }
+      .pay-settings {
+        background: #fff; border: 1px solid var(--border); border-radius: 16px;
+        padding: 1.2rem; box-shadow: var(--shadow); margin-bottom: 1.25rem;
+      }
+      .pay-settings h3 { margin: 0 0 0.75rem; font-size: 1rem; }
+      .motto {
+        display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
+        background: linear-gradient(100deg, #0b1b33, #137fec); color: #fff;
+        border-radius: 16px; padding: 1.15rem 1.35rem; margin-top: 0.5rem;
+      }
+      .motto p { margin: 0; font-size: 0.95rem; }
+      .motto small { opacity: 0.8; font-size: 0.78rem; }
+      .view-all { font-size: 0.8rem; font-weight: 600; color: var(--primary); }
+    </style>
 </head>
 <body class="admin-body">
     <aside class="admin-sidebar" id="sidebar">
-        <div class="logo"><span class="logo-icon">PT</span><span>Admin</span></div>
+        <div class="logo">
+            <span class="logo-icon">P</span>
+            <div>
+                <span>PRADEX Admin</span>
+                <span class="logo-sub">Electronics for a Smarter Tomorrow</span>
+            </div>
+        </div>
         <nav class="admin-nav">
-            <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
-            <a href="products.html"><span class="nav-icon">📦</span> Products</a>
-            <a href="add-product.html"><span class="nav-icon">➕</span> Add Product</a>
+            <a href="dashboard.html"><span class="nav-icon">⌂</span> Dashboard</a>
+            <a href="products.html"><span class="nav-icon">▣</span> Products</a>
+            <a href="inventory.html"><span class="nav-icon">▦</span> Inventory</a>
             <a href="orders.html"><span class="nav-icon">🛒</span> Orders</a>
-            <a href="inventory.html"><span class="nav-icon">📋</span> Inventory</a>
             <a href="purchasing.html"><span class="nav-icon">🧾</span> Purchasing</a>
-            <a href="customers.html"><span class="nav-icon">👥</span> Customers</a>
-            <a href="categories.html"><span class="nav-icon">🏷️</span> Categories</a>
+            <a href="customers.html"><span class="nav-icon">👤</span> Customers</a>
+            <a href="categories.html"><span class="nav-icon">🏷</span> Categories</a>
             <a href="coupons.html"><span class="nav-icon">🎟</span> Coupons</a>
-            <a href="reports.html"><span class="nav-icon">📈</span> Reports</a>
+            <a href="reports.html"><span class="nav-icon">◉</span> Reports</a>
             <a href="finance.html" class="active"><span class="nav-icon">💳</span> Finance</a>
-            <a href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
-            <a href="#" onclick="Auth.adminLogout();location.href='login.html'"><span class="nav-icon">🚪</span> Logout</a>
+            <a href="settings.html"><span class="nav-icon">⚙</span> Settings</a>
+            <a href="add-product.html"><span class="nav-icon">＋</span> Add Product</a>
+            <a href="#" onclick="adminLogout()"><span class="nav-icon">→</span> Logout</a>
         </nav>
+        <div class="admin-sidebar-footer">
+            <strong>Smarter Finances</strong>
+            Track · Manage · Grow
+        </div>
     </aside>
+
     <div class="admin-main">
         <div class="admin-topbar">
-            <button class="admin-sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
-            <h2 style="font-size:1.1rem">Finance & Payments</h2>
+            <button class="admin-sidebar-toggle" type="button" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+            <div class="admin-search">
+                <input type="search" placeholder="Search products, orders, customers...">
+            </div>
+            <div class="admin-topbar-right">
+                <div class="admin-avatar">P</div>
+                <div class="admin-user-meta"><strong>Admin</strong><span>PRADEX</span></div>
+            </div>
         </div>
+
         <div class="admin-content">
-            <form class="admin-form" id="finForm" style="max-width:640px">
-                <h3 style="margin-bottom:0.5rem">Payment Methods</h3>
-                <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1.25rem">Checkout page-ல customer பார்க்கும் options. இப்போ COD + UPI மட்டும்.</p>
+            <div class="fin-hero">
+                <div>
+                    <h1><span style="color:var(--primary)">◉</span> Finance</h1>
+                    <p>Track your revenue, expenses, profits and keep your business on the right path.</p>
+                </div>
+                <div class="fin-quote">
+                    “Good financial management builds a stronger tomorrow.”
+                    <span>— PRADEX</span>
+                </div>
+            </div>
 
-                <div class="form-group" style="display:flex;gap:1.5rem;flex-wrap:wrap">
-                    <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer">
-                        <input type="checkbox" name="enable_cod" id="enable_cod"> Cash on Delivery (COD)
-                    </label>
-                    <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer">
-                        <input type="checkbox" name="enable_upi" id="enable_upi"> UPI
-                    </label>
-                </div>
+            <div class="fin-stats" id="finStats">
+                <div class="fin-stat"><div class="ico g">📈</div><div class="lbl">Total Revenue</div><div class="val">—</div></div>
+                <div class="fin-stat"><div class="ico b">💳</div><div class="lbl">Total Expenses</div><div class="val">—</div></div>
+                <div class="fin-stat"><div class="ico p">📊</div><div class="lbl">Net Profit</div><div class="val">—</div></div>
+                <div class="fin-stat"><div class="ico a">⏳</div><div class="lbl">Pending Payments</div><div class="val">—</div></div>
+            </div>
 
-                <hr style="border-color:var(--border);margin:1.5rem 0">
-                <h3 style="margin-bottom:1rem;font-size:1rem">UPI Details</h3>
-                <div class="form-group">
-                    <label>UPI ID *</label>
-                    <input name="upi_id" id="upi_id" class="form-control" placeholder="yourname@paytm / @oksbi / @ybl">
-                </div>
-                <div class="form-group">
-                    <label>Account / Display Name</label>
-                    <input name="upi_name" id="upi_name" class="form-control" placeholder="Pradeep Tech Verse">
-                </div>
-                <div class="form-group">
-                    <label>UPI QR Code</label>
-                    <div style="display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap">
-                        <img id="qrPreview" src="" alt="QR" style="width:140px;height:140px;object-fit:contain;background:#fff;border-radius:8px;border:1px solid var(--border);display:none">
-                        <div style="flex:1;min-width:200px">
-                            <input type="file" id="qrFile" accept="image/*" class="form-control" style="margin-bottom:0.5rem">
-                            <input type="url" name="upi_qr" id="upi_qr" class="form-control" placeholder="Or paste QR image URL">
-                            <p style="font-size:0.8rem;color:var(--text-dim);margin-top:0.4rem">PhonePe / GPay / BHIM QR screenshot upload பண்ணுங்க. Customer checkout-ல இது தெரியும்.</p>
+            <div class="fin-charts">
+                <div class="card">
+                    <div class="card-head">
+                        <div>
+                            <h3>📊 Revenue Overview</h3>
+                            <div class="sub">Order revenue over last 14 days</div>
                         </div>
                     </div>
+                    <div class="line-wrap" id="revChart"></div>
                 </div>
+                <div class="card">
+                    <h3>Income Breakdown</h3>
+                    <div class="sub">From paid / confirmed orders</div>
+                    <div class="donut-row" id="incomeDonut"></div>
+                </div>
+                <div class="card">
+                    <h3>Payment Methods</h3>
+                    <div class="sub">COD vs UPI share</div>
+                    <div class="donut-row" id="methodDonut"></div>
+                </div>
+            </div>
 
-                <button type="submit" class="btn btn-primary">Save Payment Settings</button>
-            </form>
-        </div>
-    
-            <div class="admin-card" style="margin-top:1.5rem" id="codSection">
-                <h2 style="margin:0 0 0.5rem;font-size:1.1rem">COD Collection Tracker</h2>
-                <p style="color:var(--text-muted);font-size:0.9rem;margin:0 0 1rem">Cash on Delivery orders not marked paid/collected yet.</p>
-                <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem">
-                    <div class="stat-card" style="padding:0.85rem 1rem;min-width:120px"><div style="font-size:0.7rem;color:var(--text-muted)">PENDING</div><div id="codCount" style="font-size:1.3rem;font-weight:700">0</div></div>
-                    <div class="stat-card" style="padding:0.85rem 1rem;min-width:140px"><div style="font-size:0.7rem;color:var(--text-muted)">AMOUNT</div><div id="codAmount" style="font-size:1.3rem;font-weight:700">₹0</div></div>
+            <div class="fin-bottom">
+                <div class="card">
+                    <div class="card-head">
+                        <h3>📄 Recent Transactions</h3>
+                        <a class="view-all" href="orders.html">View All</a>
+                    </div>
+                    <div style="overflow-x:auto">
+                        <table class="mini-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th><th>Date &amp; Time</th><th>Type</th><th>Description</th>
+                                    <th>Amount</th><th>Status</th><th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="txnBody"><tr><td colspan="7" style="color:var(--text-muted)">Loading...</td></tr></tbody>
+                        </table>
+                    </div>
                 </div>
+                <div>
+                    <div class="card" style="margin-bottom:1rem">
+                        <h3>⚡ Quick Actions</h3>
+                        <div class="qa-grid" style="margin-top:0.75rem">
+                            <a class="qa-g" href="purchasing.html"><strong>Add Expense</strong><span>Purchasing / restock</span></a>
+                            <a class="qa-b" href="orders.html"><strong>Record Income</strong><span>View paid orders</span></a>
+                            <a class="qa-v" href="reports.html"><strong>Generate Report</strong><span>Sales &amp; finance</span></a>
+                            <button type="button" class="qa-p" onclick="document.getElementById('paySettings').scrollIntoView({behavior:'smooth'})"><strong>Payment Setup</strong><span>COD · UPI · QR</span></button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>📋 Financial Summary</h3>
+                        <ul class="sum-list" id="sumList" style="margin-top:0.5rem"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment settings (existing functionality) -->
+            <div class="pay-settings" id="paySettings">
+                <h3>💳 Payment methods (Checkout)</h3>
+                <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 1rem">Customer checkout-ல தெரியும் options. COD + UPI.</p>
+                <form id="finForm">
+                    <div class="form-group">
+                        <label style="display:flex;align-items:center;gap:0.5rem">
+                            <input type="checkbox" id="enable_cod"> Cash on Delivery (COD)
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label style="display:flex;align-items:center;gap:0.5rem">
+                            <input type="checkbox" id="enable_upi"> UPI
+                        </label>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>UPI ID</label>
+                            <input class="form-control" id="upi_id" placeholder="name@upi">
+                        </div>
+                        <div class="form-group">
+                            <label>UPI Name</label>
+                            <input class="form-control" id="upi_name" placeholder="PRADEX">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>UPI QR Code</label>
+                        <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-start">
+                            <img id="qrPreview" src="" alt="QR" style="width:120px;height:120px;object-fit:contain;background:#fff;border-radius:8px;border:1px solid var(--border);display:none">
+                            <div style="flex:1;min-width:180px">
+                                <input type="file" id="qrFile" accept="image/*" class="form-control" style="margin-bottom:0.5rem">
+                                <input type="url" id="upi_qr" class="form-control" placeholder="Or paste QR image URL">
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save payment settings</button>
+                </form>
+
+                <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
+                <h3 style="margin:0 0 0.75rem;font-size:1rem">COD Collection Tracker</h3>
                 <div class="admin-table-wrap">
                     <table class="admin-table">
-                        <thead><tr><th>Order</th><th>Customer</th><th>Phone</th><th>Status</th><th>Amount</th><th>Action</th></tr></thead>
-                        <tbody id="codBody"><tr><td colspan="6">Loading...</td></tr></tbody>
+                        <thead>
+                            <tr><th>Order</th><th>Customer</th><th>Amount</th><th>Status</th><th>Action</th></tr>
+                        </thead>
+                        <tbody id="codBody">
+                            <tr><td colspan="5" style="color:var(--text-muted)">Loading...</td></tr>
+                        </tbody>
                     </table>
                 </div>
             </div>
-</div>
+
+            <div class="motto">
+                <div>
+                    <p>“Every component counts, and so does every rupee.”</p>
+                    <small>PRADEX — Electronics for a Smarter Tomorrow</small>
+                </div>
+                <a href="reports.html" class="btn btn-primary" style="background:#fff;color:#0b1b33">Manage Finances →</a>
+            </div>
+            <p class="admin-footer-note">© 2026 PRADEX. All rights reserved.</p>
+        </div>
+    </div>
+
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
@@ -97,43 +322,72 @@
     <script src="js/admin-common.js"></script>
     <script>
         if (!Auth.isAdminLoggedIn()) location.href = "login.html";
+
+        function donutBg(parts) {
+            const total = parts.reduce((a, p) => a + p.value, 0) || 1;
+            let acc = 0;
+            return "conic-gradient(" + parts.map(p => {
+                const s = (acc / total) * 360; acc += p.value;
+                return p.color + " " + s + "deg " + (acc / total) * 360 + "deg";
+            }).join(",") + ")";
+        }
+
+        function renderLine(byDay) {
+            const days = [];
+            for (let i = 13; i >= 0; i--) {
+                const d = new Date(); d.setDate(d.getDate() - i);
+                days.push(d.toISOString().slice(0, 10));
+            }
+            const values = days.map(d => Number(byDay[d] || 0));
+            const max = Math.max(1, ...values);
+            const w = 420, h = 180, pad = 28;
+            const pts = values.map((v, i) => {
+                const x = pad + (i / 13) * (w - pad * 2);
+                const y = h - pad - (v / max) * (h - pad * 2);
+                return [x, y];
+            });
+            const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
+            const area = line + " L" + pts[13][0] + "," + (h - pad) + " L" + pts[0][0] + "," + (h - pad) + " Z";
+            const labels = days.filter((_, i) => i % 2 === 0).map((d, idx) => {
+                const i = idx * 2;
+                const x = pad + (i / 13) * (w - pad * 2);
+                return `<text x="${x}" y="${h - 8}" text-anchor="middle" fill="#94a3b8" font-size="9">${d.slice(8)}/${d.slice(5,7)}</text>`;
+            }).join("");
+            const dots = pts.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="#137fec" stroke="#fff" stroke-width="2"/>`).join("");
+            document.getElementById("revChart").innerHTML = `
+              <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+                <defs><linearGradient id="finArea" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#137fec" stop-opacity="0.22"/>
+                  <stop offset="100%" stop-color="#137fec" stop-opacity="0"/>
+                </linearGradient></defs>
+                <path d="${area}" fill="url(#finArea)"/>
+                <path d="${line}" fill="none" stroke="#137fec" stroke-width="2.5" stroke-linecap="round"/>
+                ${dots}${labels}
+              </svg>`;
+        }
+
+        // Payment settings
         const s = API.getStoreSettings();
         document.getElementById("enable_cod").checked = s.enable_cod !== false;
         document.getElementById("enable_upi").checked = s.enable_upi !== false;
         document.getElementById("upi_id").value = s.upi_id || "";
-        document.getElementById("upi_name").value = s.upi_name || "";
+        document.getElementById("upi_name").value = s.upi_name || CONFIG.APP_NAME || "PRADEX";
         document.getElementById("upi_qr").value = s.upi_qr || "";
         if (s.upi_qr) {
             const img = document.getElementById("qrPreview");
-            img.src = s.upi_qr;
-            img.style.display = "block";
+            img.src = s.upi_qr; img.style.display = "block";
         }
-
         document.getElementById("qrFile").addEventListener("change", (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            if (file.size > 2 * 1024 * 1024) {
-                Utils.toast("QR image max 2MB", "error");
-                return;
-            }
+            const f = e.target.files && e.target.files[0];
+            if (!f) return;
             const reader = new FileReader();
             reader.onload = () => {
                 document.getElementById("upi_qr").value = reader.result;
                 const img = document.getElementById("qrPreview");
-                img.src = reader.result;
-                img.style.display = "block";
+                img.src = reader.result; img.style.display = "block";
             };
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(f);
         });
-
-        document.getElementById("upi_qr").addEventListener("input", (e) => {
-            if (e.target.value) {
-                const img = document.getElementById("qrPreview");
-                img.src = e.target.value;
-                img.style.display = "block";
-            }
-        });
-
         document.getElementById("finForm").addEventListener("submit", (e) => {
             e.preventDefault();
             const cur = API.getStoreSettings();
@@ -147,53 +401,159 @@
                 return;
             }
             API.saveStoreSettings(cur);
-            Utils.toast("Payment settings saved – checkout will use these", "success");
+            Utils.toast("Payment settings saved", "success");
         });
-    
-        async function loadCodTracker() {
+
+        async function markCodCollected(orderId) {
             try {
-                const res = await API.adminGetOrders();
-                const list = (res.success && res.data) ? res.data : [];
-                const cod = list.filter(o =>
-                    String(o.payment_method||"").toLowerCase()==="cod" &&
-                    !/paid|collected|success/i.test(String(o.payment_status||"")) &&
-                    !/cancelled/i.test(String(o.order_status||""))
+                const res = await API.adminUpdatePaymentStatus(orderId, "Collected");
+                if (res && res.success) {
+                    Utils.toast("Marked collected", "success");
+                    loadFinance();
+                } else Utils.toast((res && res.message) || "Failed", "error");
+            } catch (e) { Utils.toast("Failed", "error"); }
+        }
+
+        async function loadFinance() {
+            try {
+                const [ordRes, prodRes] = await Promise.all([
+                    API.adminGetOrders().catch(() => ({ success: false, data: [] })),
+                    API.adminGetProducts().catch(() => ({ success: false, data: [] }))
+                ]);
+                const orders = (ordRes.success && ordRes.data) ? ordRes.data : [];
+                const products = (prodRes.success && prodRes.data) ? prodRes.data : [];
+
+                let revenue = 0, pendingAmt = 0, pendingCount = 0;
+                let paidCount = 0, shippingRev = 0;
+                let codAmt = 0, upiAmt = 0;
+                const byDay = {};
+
+                orders.forEach(o => {
+                    const total = Number(o.total) || 0;
+                    const ship = Number(o.shipping) || Number(o.shipping_fee) || 0;
+                    const pay = String(o.payment_status || "").toLowerCase();
+                    const method = String(o.payment_method || "").toLowerCase();
+                    const paid = /paid|success|collected|completed/.test(pay);
+                    if (paid) {
+                        revenue += total;
+                        paidCount++;
+                        shippingRev += ship;
+                        if (method.includes("upi")) upiAmt += total;
+                        else codAmt += total;
+                    } else {
+                        pendingAmt += total;
+                        pendingCount++;
+                    }
+                    const day = String(o.created_at || "").slice(0, 10);
+                    if (day && paid) byDay[day] = (byDay[day] || 0) + total;
+                });
+
+                // Expense estimate: cost_price * stock sold approx OR use product cost * (original stock not available)
+                // Use sum of cost_price * quantity from order if available; else estimate 35% of revenue as COGS placeholder from product costs
+                let expenses = 0;
+                products.forEach(p => {
+                    // not ideal - skip product stock value as expense
+                });
+                // Better: unpaid purchase isn't tracked; estimate expenses from order cost fields if any
+                orders.forEach(o => {
+                    const cost = Number(o.cost_total) || Number(o.purchase_cost) || 0;
+                    expenses += cost;
+                });
+                // If no cost data, soft estimate: 30% of revenue as COGS for display only
+                if (!expenses && revenue) expenses = Math.round(revenue * 0.3);
+                const profit = revenue - expenses;
+
+                document.getElementById("finStats").innerHTML = `
+                  <div class="fin-stat"><div class="ico g">📈</div><div class="lbl">Total Revenue</div>
+                    <div class="val">${Utils.formatPrice(revenue)}</div>
+                    <div class="sub">From ${paidCount} paid orders</div></div>
+                  <div class="fin-stat"><div class="ico b">💳</div><div class="lbl">Total Expenses</div>
+                    <div class="val">${Utils.formatPrice(expenses)}</div>
+                    <div class="sub">COGS / purchase estimate</div></div>
+                  <div class="fin-stat"><div class="ico p">📊</div><div class="lbl">Net Profit</div>
+                    <div class="val">${Utils.formatPrice(profit)}</div>
+                    <div class="sub">After estimated expenses</div></div>
+                  <div class="fin-stat"><div class="ico a">⏳</div><div class="lbl">Pending Payments</div>
+                    <div class="val">${Utils.formatPrice(pendingAmt)}</div>
+                    <div class="sub">${pendingCount} orders pending</div></div>`;
+
+                renderLine(byDay);
+
+                const productSales = Math.max(0, revenue - shippingRev);
+                const incomeParts = [
+                    { name: "Product Sales", value: productSales || 1, color: "#137fec" },
+                    { name: "Shipping", value: shippingRev || 0, color: "#10b981" }
+                ].filter(p => p.value > 0);
+                document.getElementById("incomeDonut").innerHTML = `
+                  <div class="donut" style="background:${donutBg(incomeParts)}">
+                    <div class="donut-in"><strong>${Utils.formatPrice(revenue)}</strong><span>Revenue</span></div>
+                  </div>
+                  <ul class="legend">
+                    ${incomeParts.map(p => {
+                      const pct = revenue ? Math.round(p.value / revenue * 100) : 0;
+                      return `<li><i style="background:${p.color}"></i>${p.name}<span class="pct">${pct}%</span></li>`;
+                    }).join("")}
+                  </ul>`;
+
+                const methodParts = [
+                    { name: "COD", value: codAmt || 0, color: "#f59e0b" },
+                    { name: "UPI", value: upiAmt || 0, color: "#137fec" }
+                ];
+                const methodTotal = methodParts.reduce((a, p) => a + p.value, 0) || 1;
+                document.getElementById("methodDonut").innerHTML = `
+                  <div class="donut" style="background:${donutBg(methodParts.every(p=>!p.value) ? [{color:'#e2e8f0',value:1}] : methodParts)}">
+                    <div class="donut-in"><strong>${Utils.formatPrice(codAmt + upiAmt)}</strong><span>Paid</span></div>
+                  </div>
+                  <ul class="legend">
+                    <li><i style="background:#f59e0b"></i>COD<span class="pct">${Math.round(codAmt/methodTotal*100)}%</span></li>
+                    <li><i style="background:#137fec"></i>UPI<span class="pct">${Math.round(upiAmt/methodTotal*100)}%</span></li>
+                  </ul>`;
+
+                // Transactions = recent orders as income lines
+                const recent = orders.slice().sort((a, b) => String(b.created_at||"").localeCompare(String(a.created_at||""))).slice(0, 8);
+                document.getElementById("txnBody").innerHTML = recent.length ? recent.map(o => {
+                    const paid = /paid|success|collected|completed/i.test(String(o.payment_status||""));
+                    return `<tr>
+                      <td><a href="order-detail.html?id=${encodeURIComponent(o.order_id)}">${o.order_id}</a></td>
+                      <td style="white-space:nowrap;font-size:0.78rem;color:var(--text-muted)">${o.created_at ? new Date(o.created_at).toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"}) : "—"}</td>
+                      <td><span class="type-inc">Income</span></td>
+                      <td>Order · ${(o.payment_method||"").toUpperCase() || "—"}</td>
+                      <td class="amt-in">+ ${Utils.formatPrice(o.total)}</td>
+                      <td class="${paid ? "st-paid" : "st-pending"}">${paid ? "Paid" : (o.payment_status || "Pending")}</td>
+                      <td><a class="btn btn-outline btn-sm" href="order-detail.html?id=${encodeURIComponent(o.order_id)}">View</a></td>
+                    </tr>`;
+                }).join("") : `<tr><td colspan="7" style="color:var(--text-muted)">No transactions yet</td></tr>`;
+
+                document.getElementById("sumList").innerHTML = `
+                  <li><span class="k">Total Revenue</span><span class="v">${Utils.formatPrice(revenue)}</span></li>
+                  <li><span class="k">Total Expenses</span><span class="v">${Utils.formatPrice(expenses)}</span></li>
+                  <li><span class="k">Net Profit</span><span class="v">${Utils.formatPrice(profit)}</span></li>
+                  <li><span class="k">Pending Payments</span><span class="v">${Utils.formatPrice(pendingAmt)}</span></li>`;
+
+                // COD pending
+                const codPending = orders.filter(o =>
+                    String(o.payment_method||"").toLowerCase() === "cod" &&
+                    !/paid|collected|success/i.test(String(o.payment_status||""))
                 );
-                const amt = cod.reduce((a,o)=>a+(Number(o.total)||0),0);
-                const cEl = document.getElementById("codCount");
-                const aEl = document.getElementById("codAmount");
-                if (cEl) cEl.textContent = cod.length;
-                if (aEl) aEl.textContent = Utils.formatPrice(amt);
-                const body = document.getElementById("codBody");
-                if (!body) return;
-                if (!cod.length) {
-                    body.innerHTML = `<tr><td colspan="6" style="color:var(--text-muted)">No pending COD collections</td></tr>`;
-                    return;
-                }
-                body.innerHTML = cod.map(o => `
-                    <tr>
-                        <td><a href="order-detail.html?id=${encodeURIComponent(o.order_id)}" style="color:var(--primary)">${o.order_id}</a></td>
-                        <td>${o.name||"—"}</td>
-                        <td>${o.phone||"—"}</td>
-                        <td>${o.order_status||"—"}</td>
+                const codBody = document.getElementById("codBody");
+                if (!codPending.length) {
+                    codBody.innerHTML = `<tr><td colspan="5" style="color:var(--text-muted)">No pending COD collections</td></tr>`;
+                } else {
+                    codBody.innerHTML = codPending.map(o => `
+                      <tr>
+                        <td><a href="order-detail.html?id=${encodeURIComponent(o.order_id)}">${o.order_id}</a></td>
+                        <td>${o.name || "—"}<br><span style="font-size:0.75rem;color:var(--text-muted)">${o.phone||""}</span></td>
                         <td>${Utils.formatPrice(o.total)}</td>
-                        <td><button class="btn btn-sm btn-primary" onclick="markCodCollected('${String(o.order_id).replace(/'/g,"")}')">Mark collected</button></td>
-                    </tr>`).join("");
+                        <td>${o.order_status || "—"} / ${o.payment_status || "Pending"}</td>
+                        <td><button type="button" class="btn btn-primary btn-sm" onclick="markCodCollected('${String(o.order_id).replace(/'/g,"")}')">Mark collected</button></td>
+                      </tr>`).join("");
+                }
             } catch (e) {
-                const body = document.getElementById("codBody");
-                if (body) body.innerHTML = `<tr><td colspan="6">Could not load orders</td></tr>`;
+                console.error(e);
+                Utils.toast("Finance load failed", "error");
             }
         }
-        async function markCodCollected(id) {
-            try {
-                const res = await API.adminUpdatePaymentStatus(id, "Paid");
-                Utils.toast(res.success ? "Marked collected" : (res.message||"Failed"), res.success?"success":"error");
-                if (res.success) loadCodTracker();
-            } catch (e) {
-                Utils.toast("Error updating payment", "error");
-            }
-        }
-        if (typeof Auth !== "undefined" && Auth.isAdminLoggedIn()) loadCodTracker();
-</script>
+        loadFinance();
+    </script>
 </body>
 </html>

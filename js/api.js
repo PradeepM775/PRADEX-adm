@@ -324,6 +324,39 @@ const API = {
         return this.request("createUser", data);
     },
 
+    async getPublicConfig() {
+        // Live from Apps Script so admin + client stay in sync
+        try {
+            const res = await this.request("getPublicConfig", {});
+            if (res && res.success && res.data) {
+                const cur = this.getStoreSettings();
+                const merged = { ...cur, ...res.data };
+                try { localStorage.setItem("ptv_settings", JSON.stringify(merged)); } catch (e) {}
+                return res;
+            }
+        } catch (e) {}
+        const s = this.getStoreSettings();
+        return {
+            success: true,
+            data: {
+                store_open: s.store_open !== false,
+                unavailable_title: s.unavailable_title,
+                unavailable_message: s.unavailable_message,
+                unavailable_until: s.unavailable_until || ""
+            }
+        };
+    },
+
+    async adminSaveStoreStatus(data) {
+        const res = await this.request("adminSaveStoreStatus", data || {});
+        if (res && res.success && res.data) {
+            const cur = this.getStoreSettings();
+            const merged = { ...cur, ...res.data };
+            try { localStorage.setItem("ptv_settings", JSON.stringify(merged)); } catch (e) {}
+        }
+        return res;
+    },
+
     getPaymentSettings() {
         return { success: true, data: this.getStoreSettings() };
     },
@@ -349,7 +382,12 @@ const API = {
             // Messaging / OTP
             otp_from_email: CONFIG.EMAIL,
             whatsapp_admin_number: CONFIG.WHATSAPP,
-            whatsapp_notify_customer: true
+            whatsapp_notify_customer: true,
+            // Store availability
+            store_open: true,
+            unavailable_title: "Currently unavailable",
+            unavailable_message: "We are not accepting new orders right now. Please check back soon.",
+            unavailable_until: ""
         };
         try {
             const saved = JSON.parse(localStorage.getItem("ptv_settings") || "null");
